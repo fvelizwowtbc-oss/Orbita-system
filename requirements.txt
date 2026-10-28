@@ -11,8 +11,4 @@ Pillow==13.0.0
 openpyxl==3.1.5
 requests==2.32.3
 email-validator==2.2.0
-waitress==3.0.0
-
-python-escpos==3.1
-pywin32==306
 gunicorn==21.2.0
