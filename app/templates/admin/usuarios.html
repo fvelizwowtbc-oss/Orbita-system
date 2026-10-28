@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Admin - Usuarios{% endblock %}
+{% block page_title %}Gestión de Usuarios{% endblock %}
+{% block page_subtitle %}{{ usuarios|length }} usuario{% if usuarios|length != 1 %}s{% endif %}{% endblock %}
+{% block sidebar %}{% include 'admin/_sidebar.html' %}{% endblock %}
+
+{% block content %}
+
+<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6">
+    <div class="relative">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="buscadorUsuarios" placeholder="Buscar por nombre o email..."
+               class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+               oninput="filtrarUsuarios()">
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    {% if usuarios %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Usuario</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Contacto</th>
+                    <th class="text-center px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Estado</th>
+                    <th class="text-center px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Plan</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100" id="tablaUsuarios">
+                {% for u in usuarios %}
+                <tr class="hover:bg-slate-50 usuario-row"
+                    data-busqueda="{{ (u.nombre or '')|lower }} {{ (u.email or '')|lower }}">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-semibold">
+                                {{ (u.nombre or '?')[0]|upper }}
+                            </div>
+                            <div>
+                                <p class="font-medium text-slate-800">{{ u.nombre }}</p>
+                                <p class="text-xs text-slate-500">{{ u.email }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-slate-600">
+                        {% if u.telefono %}
+                            <p class="text-xs"><i class="fas fa-phone text-slate-400 mr-1"></i>{{ u.telefono }}</p>
+                        {% else %}
+                            <span class="text-slate-400 text-xs">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        {% if u.activo %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-[#d4f7f7] text-[#0ea5a5]">
+                                <i class="fas fa-check mr-1"></i> Activo
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                <i class="fas fa-times mr-1"></i> Inactivo
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        {% if u.suscripcion_vigente %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                <i class="fas fa-crown mr-1"></i> VIP
+                            </span>
+                            <p class="text-xs text-slate-500 mt-1">
+                                Hasta {{ u.fecha_fin_suscripcion.strftime('%d/%m/%Y') if u.fecha_fin_suscripcion else '-' }}
+                            </p>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                Free
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <a href="{{ url_for('admin.configurar_empresa', uid=u.id) }}"
+                           class="inline-flex items-center gap-2 text-[#1CA7EC] hover:text-white bg-[#e6f7ff] hover:bg-[#1CA7EC] border border-[#b8e8fb] px-4 py-2 rounded-lg text-sm font-medium transition">
+                            <i class="fas fa-building"></i>
+                            <span>Configurar</span>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-users text-slate-300 text-5xl mb-4"></i>
+        <p class="text-slate-500">No hay usuarios registrados</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filtrarUsuarios() {
+    var q = document.getElementById('buscadorUsuarios').value.toLowerCase().trim();
+    document.querySelectorAll('.usuario-row').forEach(function(row) {
+        var match = row.dataset.busqueda.indexOf(q) !== -1;
+        row.style.display = match ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

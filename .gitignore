@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+ENV/
+build/
+dist/
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Datos y archivos sensibles
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+facturas/
+tasa_cache.json
+.secret_key
+
+# Uploads (imágenes de productos)
+app/static/uploads/
+uploads/
+
+# Backups
+*.bak_*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

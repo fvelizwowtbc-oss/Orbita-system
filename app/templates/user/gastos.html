@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% block title %}Gastos{% endblock %}
+{% block page_title %}Gastos{% endblock %}
+{% block page_subtitle %}Control de gastos del negocio{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block header_actions %}
+<button onclick="abrirModalGasto()" class="bg-[#1CA7EC] hover:bg-[#1892d4] text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+    <i class="fas fa-plus mr-1"></i> Nuevo Gasto
+</button>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-day text-red-600"></i>
+            </div>
+            <p class="text-xs font-medium text-slate-500 uppercase">Gastos del mes</p>
+        </div>
+        <p class="text-2xl font-bold text-slate-800">${{ "%.2f"|format(total_mes) }}</p>
+    </div>
+
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-alt text-red-600"></i>
+            </div>
+            <p class="text-xs font-medium text-slate-500 uppercase">Gastos del año</p>
+        </div>
+        <p class="text-2xl font-bold text-slate-800">${{ "%.2f"|format(total_anio) }}</p>
+    </div>
+
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-filter text-blue-600"></i>
+            </div>
+            <p class="text-xs font-medium text-slate-500 uppercase">Filtro actual</p>
+        </div>
+        <p class="text-2xl font-bold text-slate-800">${{ "%.2f"|format(total_filtro) }}</p>
+    </div>
+</div>
+
+<!-- Filtros con rango de fechas -->
+<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6">
+    <form method="GET" class="space-y-3">
+        <!-- Fila 1: Fechas -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Desde</label>
+                <input type="date" name="desde" value="{{ filtro_desde }}"
+                       class="w-full px-4 py-2 border rounded-lg text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Hasta</label>
+                <input type="date" name="hasta" value="{{ filtro_hasta }}"
+                       class="w-full px-4 py-2 border rounded-lg text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
+                <select name="categoria" class="w-full px-4 py-2 border rounded-lg text-sm">
+                    <option value="">Todas las categorias</option>
+                    {% for key, label, icon in categorias %}
+                        <option value="{{ key }}" {% if key == filtro_categoria %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Buscar</label>
+                <input type="text" name="buscar" value="{{ filtro_buscar }}" placeholder="Descripcion..."
+                       class="w-full px-4 py-2 border rounded-lg text-sm">
+            </div>
+        </div>
+
+        <!-- Fila 2: Atajos y botones -->
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-500 font-medium mr-1">Rapido:</span>
+            <a href="{{ url_for('user.gastos_listado', rango='hoy') }}"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if filtro_rango == 'hoy' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">
+                Hoy
+            </a>
+            <a href="{{ url_for('user.gastos_listado', rango='semana') }}"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if filtro_rango == 'semana' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">
+                Ultimos 7 dias
+            </a>
+            <a href="{{ url_for('user.gastos_listado', rango='mes') }}"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if filtro_rango == 'mes' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">
+                Este mes
+            </a>
+            <a href="{{ url_for('user.gastos_listado', rango='anio') }}"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if filtro_rango == 'anio' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">
+                Este año
+            </a>
+            <a href="{{ url_for('user.gastos_listado', rango='todo') }}"
+               class="px-3 py-1.5 rounded-lg text-xs font-medium transition {% if filtro_rango == 'todo' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">
+                Todo
+            </a>
+
+            <div class="flex gap-2 ml-auto">
+                <button type="submit" class="px-5 py-2 bg-[#1CA7EC] hover:bg-[#1892d4] text-white rounded-lg text-sm font-medium">
+                    <i class="fas fa-search mr-1"></i> Filtrar
+                </button>
+                <a href="{{ url_for('user.gastos_listado') }}" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Listado -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    {% if gastos %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Fecha</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Categoria</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Descripcion</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Proveedor</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Monto USD</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for g in gastos %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 text-slate-600">{{ g.fecha.strftime('%d/%m/%Y') if g.fecha else '-' }}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700">
+                            {{ g.categoria|capitalize }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-slate-800">{{ g.descripcion }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ g.proveedor_nombre or '-' }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-red-600">${{ "%.2f"|format(g.monto_usd or 0) }}</td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        <button type="button" onclick='editarGasto({{ g.id }}, {{ g.categoria|tojson }}, {{ g.descripcion|tojson }}, {{ g.monto_usd|float }}, {{ g.fecha.strftime("%Y-%m-%d")|tojson }}, {{ g.metodo_pago|tojson }}, {{ (g.proveedor_nombre or "")|tojson }}, {{ (g.notas or "")|tojson }})'
+                                class="text-[#1CA7EC] hover:text-blue-800 p-1" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" onclick="eliminarGasto({{ g.id }})"
+                                class="text-red-600 hover:text-red-800 p-1 ml-1" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-money-bill-wave text-slate-300 text-5xl mb-4"></i>
+        <p class="text-slate-500 mb-4">No hay gastos registrados</p>
+        <button onclick="abrirModalGasto()" class="bg-[#1CA7EC] text-white px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-plus mr-1"></i> Registrar primer gasto
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Gasto -->
+<div id="modalGasto" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+            <h3 id="tituloModalGasto" class="font-bold text-lg">Nuevo Gasto</h3>
+            <button onclick="cerrarModalGasto()" class="text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="formGasto" method="POST" action="{{ url_for('user.gastos_crear') }}" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="gasto_id" id="gasto_id" value="">
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Categoria *</label>
+                <select name="categoria" id="f_categoria_gasto" required class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">Seleccionar...</option>
+                    {% for key, label, icon in categorias %}
+                        <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Descripcion *</label>
+                <input type="text" name="descripcion" id="f_descripcion" required class="w-full px-4 py-2 border rounded-lg">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Monto USD *</label>
+                    <input type="number" step="0.01" name="monto_usd" id="f_monto_usd" required class="w-full px-4 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Monto Bs (opcional)</label>
+                    <input type="number" step="0.01" name="monto_ves" id="f_monto_ves" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Fecha</label>
+                    <input type="date" name="fecha" id="f_fecha_gasto" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Metodo de pago</label>
+                    <select name="metodo_pago" id="f_metodo_gasto" class="w-full px-4 py-2 border rounded-lg">
+                        {% for key, label in metodos_pago %}
+                            <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Proveedor (opcional)</label>
+                <input type="text" name="proveedor_nombre" id="f_proveedor" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Notas (opcional)</label>
+                <textarea name="notas" id="f_notas" rows="2" class="w-full px-4 py-2 border rounded-lg resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="cerrarModalGasto()" class="flex-1 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 py-2.5 bg-[#1CA7EC] hover:bg-[#1892d4] text-white rounded-xl font-medium">
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalGasto() {
+    document.getElementById('tituloModalGasto').textContent = 'Nuevo Gasto';
+    document.getElementById('formGasto').action = '{{ url_for("user.gastos_crear") }}';
+    document.getElementById('formGasto').reset();
+    document.getElementById('f_fecha_gasto').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('modalGasto').classList.remove('hidden');
+}
+
+function cerrarModalGasto() {
+    document.getElementById('modalGasto').classList.add('hidden');
+}
+
+function editarGasto(id, categoria, descripcion, monto, fecha, metodo, proveedor, notas) {
+    document.getElementById('tituloModalGasto').textContent = 'Editar Gasto';
+    document.getElementById('formGasto').action = '/user/gastos/' + id + '/editar';
+    document.getElementById('f_categoria_gasto').value = categoria;
+    document.getElementById('f_descripcion').value = descripcion;
+    document.getElementById('f_monto_usd').value = monto;
+    document.getElementById('f_fecha_gasto').value = fecha;
+    document.getElementById('f_metodo_gasto').value = metodo;
+    document.getElementById('f_proveedor').value = proveedor || '';
+    document.getElementById('f_notas').value = notas || '';
+    document.getElementById('modalGasto').classList.remove('hidden');
+}
+
+async function eliminarGasto(id) {
+    const r = await Swal.fire({
+        title: 'Eliminar gasto?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Si, eliminar',
+        cancelButtonText: 'Cancelar',
+    });
+
+    if (!r.isConfirmed) return;
+
+    try {
+        const resp = await fetch('/user/gastos/' + id + '/eliminar', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1500, showConfirmButton: false })
+                .then(() => location.reload());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+        }
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarModalGasto();
+});
+</script>
+
+{% endblock %}

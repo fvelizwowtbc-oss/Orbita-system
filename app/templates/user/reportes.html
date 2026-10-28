@@ -1,0 +1,472 @@
+﻿{% extends 'base.html' %}
+{% block title %}Reportes{% endblock %}
+{% block page_title %}Reportes de Ventas{% endblock %}
+{% block page_subtitle %}Análisis de tu negocio{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block content %}
+
+<!-- Filtros de fecha -->
+<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6 anim-hover-lift">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Desde</label>
+            <input type="date" name="fecha_desde" value="{{ fecha_desde }}"
+                   class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Hasta</label>
+            <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}"
+                   class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+        </div>
+        <button type="submit" class="px-6 py-2 bg-[#1CA7EC] hover:bg-[#1892d4] text-white rounded-lg text-sm">
+            <i class="fas fa-filter mr-1"></i> Filtrar
+        </button>
+        <div class="flex gap-1 ml-auto">
+            <button type="button" onclick="setRango('hoy')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">Hoy</button>
+            <button type="button" onclick="setRango('semana')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">7 días</button>
+            <button type="button" onclick="setRango('mes')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">Este mes</button>
+            <button type="button" onclick="setRango('mes_anterior')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">Mes anterior</button>
+            <button type="button" onclick="setRango('año')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs">Este año</button>
+        </div>
+    </form>
+</div>
+
+<!-- Resumen del rango -->
+<div class="mb-4">
+    <p class="text-sm text-slate-600">
+        <i class="fas fa-calendar text-[#1CA7EC] mr-1"></i>
+        Mostrando datos del <strong>{{ resumen.fecha_desde }}</strong> al <strong>{{ resumen.fecha_hasta }}</strong>
+        · Tasa BCV: <strong class="text-[#1CA7EC]">Bs. {{ "%.2f"|format(resumen.tasa_bcv) }}</strong>
+    </p>
+</div>
+
+<!-- Stats principales -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover anim-hover-lift">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-medium text-slate-500 uppercase">Ventas</p>
+            <i class="fas fa-shopping-cart text-[#1CA7EC]"></i>
+        </div>
+        <p class="text-2xl font-bold text-slate-800">{{ resumen.num_ventas }}</p>
+        <p class="text-xs text-slate-500 mt-1">{{ resumen.total_unidades }} unidades</p>
+    </div>
+
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover anim-hover-lift">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-medium text-slate-500 uppercase">Ingresos USD</p>
+            <i class="fas fa-dollar-sign text-emerald-500"></i>
+        </div>
+        <p class="text-2xl font-bold text-[#4ADEDE]">${{ "%.2f"|format(resumen.total_usd) }}</p>
+        <p class="text-xs text-slate-500 mt-1">Ticket: ${{ "%.2f"|format(resumen.ticket_promedio_usd) }}</p>
+    </div>
+
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover anim-hover-lift">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-medium text-slate-500 uppercase">Ingresos Bs</p>
+            <i class="fas fa-money-bill-wave text-[#1CA7EC]"></i>
+        </div>
+        <p class="text-2xl font-bold text-[#1CA7EC]">Bs. {{ "{:,.2f}".format(resumen.total_bs).replace(',', '.') }}</p>
+        <p class="text-xs text-slate-500 mt-1">Tasa: Bs. {{ "%.2f"|format(resumen.tasa_bcv) }}</p>
+    </div>
+
+    <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl p-5 shadow-sm border border-emerald-700 text-white">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                <i class="fas fa-chart-pie text-white"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-white/80 uppercase">Ganancia Neta</p>
+                <p class="text-[10px] text-white/60">Ventas - Costos - Gastos</p>
+            </div>
+        </div>
+        <p class="text-2xl font-bold mt-2">${{ "%.2f"|format(resumen.ganancia_neta_usd or 0) }}</p>
+        <p class="text-xs text-white/80 mt-0.5">Bs. {{ "{:,.2f}".format(resumen.ganancia_neta_bs or 0).replace(',', '.') }}</p>
+    </div>
+
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 card-hover anim-hover-lift">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-medium text-slate-500 uppercase">Ganancia</p>
+            <i class="fas fa-chart-line text-purple-500"></i>
+        </div>
+        <p class="text-2xl font-bold text-[#787FF6]">${{ "%.2f"|format(resumen.ganancia_usd) }}</p>
+        <p class="text-xs text-slate-500 mt-1">Bs. {{ "{:,.2f}".format(resumen.ganancia_bs).replace(',', '.') }}</p>
+    </div>
+</div>
+
+<!-- Ventas diarias -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden anim-hover-lift">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+        <h3 class="font-semibold text-slate-800">
+            <i class="fas fa-calendar-day text-[#1CA7EC] mr-2"></i>Ventas diarias
+        </h3>
+        <span class="text-xs text-slate-500">{{ ventas_por_dia|length }} día{% if ventas_por_dia|length != 1 %}s{% endif %} con ventas</span>
+    </div>
+
+    {% if ventas_por_dia %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Fecha</th>
+                    <th class="text-center px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Ventas</th>
+                    <th class="text-center px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Unidades</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Total USD</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Total Bs</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Ganancia USD</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Ganancia Bs</th>
+                    <th class="text-right px-4 py-3 font-semibold text-red-600 text-xs uppercase bg-red-50">Gastos USD</th>
+                    <th class="text-right px-4 py-3 font-semibold text-emerald-700 text-xs uppercase bg-emerald-50">Ganancia Neta USD</th>
+                    <th class="text-right px-4 py-3 font-semibold text-emerald-700 text-xs uppercase bg-emerald-50">Ganancia Neta Bs</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for v in ventas_por_dia %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 font-medium text-slate-800">
+                        <i class="fas fa-calendar text-slate-400 mr-1"></i>{{ v.dia_fmt }}
+                    </td>
+                    <td class="px-4 py-3 text-center">{{ v.cantidad_ventas }}</td>
+                    <td class="px-4 py-3 text-center text-slate-600">{{ v.unidades }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-[#4ADEDE]">${{ "%.2f"|format(v.total_usd) }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-[#1CA7EC]">Bs. {{ "{:,.2f}".format(v.total_bs).replace(',', '.') }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-[#787FF6]">${{ "%.2f"|format(v.ganancia_usd) }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-purple-500">Bs. {{ "{:,.2f}".format(v.ganancia_bs).replace(',', '.') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="bg-slate-100 border-t-2 border-slate-300 font-semibold">
+                <tr>
+                    <td class="px-4 py-3">TOTAL</td>
+                    <td class="px-4 py-3 text-center">{{ resumen.num_ventas }}</td>
+                    <td class="px-4 py-3 text-center">{{ resumen.total_unidades }}</td>
+                    <td class="px-4 py-3 text-right text-[#0ea5a5]">${{ "%.2f"|format(resumen.total_usd) }}</td>
+                    <td class="px-4 py-3 text-right text-[#1CA7EC]">Bs. {{ "{:,.2f}".format(resumen.total_bs).replace(',', '.') }}</td>
+                    <td class="px-4 py-3 text-right text-[#787FF6]">${{ "%.2f"|format(resumen.ganancia_usd) }}</td>
+                    <td class="px-4 py-3 text-right text-[#787FF6]">Bs. {{ "{:,.2f}".format(resumen.ganancia_bs).replace(',', '.') }}</td>
+                    <td class="px-4 py-3 text-right text-red-600 bg-red-50">${{ "%.2f"|format(resumen.gastos_rango_dias_usd or 0) }}</td>
+                    <td class="px-4 py-3 text-right font-bold {% if (resumen.ganancia_neta_usd or 0) >= 0 %}text-emerald-700{% else %}text-red-700{% endif %} bg-emerald-50">
+                        ${{ "%.2f"|format(resumen.ganancia_neta_usd or 0) }}
+                    </td>
+                    <td class="px-4 py-3 text-right font-bold {% if (resumen.ganancia_neta_bs or 0) >= 0 %}text-emerald-700{% else %}text-red-700{% endif %} bg-emerald-50">
+                        Bs. {{ "{:,.2f}".format(resumen.ganancia_neta_bs or 0).replace(',', '.') }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+        <i class="fas fa-calendar-times text-slate-300 text-4xl mb-3"></i>
+        <p class="text-slate-500">No hay ventas en este rango de fechas</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Gráfico compacto: ventas por día -->
+<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6 anim-hover-lift">
+    <div class="flex justify-between items-center mb-3">
+        <h3 class="font-semibold text-slate-800 text-sm">
+            <i class="fas fa-chart-line text-[#1CA7EC] mr-2"></i>Tendencia diaria de ventas
+        </h3>
+        <span class="text-xs text-slate-500">Del rango seleccionado</span>
+    </div>
+    <div style="height: 180px; position: relative;">
+        <canvas id="chartDias"></canvas>
+    </div>
+</div>
+
+<!-- ============================================================
+     GASTOS DEL RANGO
+     ============================================================ -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden anim-hover-lift">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+        <h3 class="font-semibold text-slate-800">
+            <i class="fas fa-money-bill-wave text-red-500 mr-2"></i>
+            Gastos del rango
+        </h3>
+        <div class="flex items-center gap-4">
+            <span class="text-xs text-slate-500">{{ num_gastos_rango }} gasto{% if num_gastos_rango != 1 %}s{% endif %}</span>
+            <span class="text-lg font-bold text-red-600">${{ "%.2f"|format(total_gastos_rango) }}</span>
+        </div>
+    </div>
+
+    {% if gastos_rango %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Fecha</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Categoria</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Descripcion</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Proveedor</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Metodo</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Monto USD</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for g in gastos_rango %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 text-slate-600">{{ g.fecha.strftime('%d/%m/%Y') if g.fecha else '-' }}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700">
+                            {{ g.categoria|capitalize }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-slate-800">{{ g.descripcion }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ g.proveedor_nombre or '-' }}</td>
+                    <td class="px-4 py-3 text-slate-600 text-xs">{{ g.metodo_pago|capitalize }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-red-600">${{ "%.2f"|format(g.monto_usd or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="bg-slate-100 border-t-2 border-slate-300 font-bold">
+                <tr>
+                    <td colspan="5" class="px-4 py-3 text-right">TOTAL GASTOS:</td>
+                    <td class="px-4 py-3 text-right text-red-600">${{ "%.2f"|format(total_gastos_rango) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-8 text-slate-400">
+        <i class="fas fa-money-bill-wave text-3xl mb-2 block opacity-40"></i>
+        <p class="text-sm">No hay gastos en este rango</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ============================================================
+     FACTURAS DE PROVEEDORES PAGADAS
+     ============================================================ -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden anim-hover-lift">
+    <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+        <h3 class="font-semibold text-slate-800">
+            <i class="fas fa-truck text-blue-500 mr-2"></i>
+            Facturas de proveedores pagadas
+        </h3>
+        <div class="flex items-center gap-4">
+            <span class="text-xs text-slate-500">{{ num_facturas_prov_rango }} factura{% if num_facturas_prov_rango != 1 %}s{% endif %}</span>
+            <span class="text-lg font-bold text-blue-600">${{ "%.2f"|format(total_facturas_prov_rango) }}</span>
+        </div>
+    </div>
+
+    {% if facturas_prov_rango %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Fecha pago</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Proveedor</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Nro Factura</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Tipo</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Metodo</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Monto USD</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for f in facturas_prov_rango %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 text-slate-600">{{ f.fecha_pago.strftime('%d/%m/%Y') if f.fecha_pago else '-' }}</td>
+                    <td class="px-4 py-3">
+                        <p class="font-medium text-slate-800">{{ f.proveedor_nombre }}</p>
+                        {% if f.proveedor_rif %}<p class="text-xs text-slate-500">{{ f.proveedor_rif }}</p>{% endif %}
+                    </td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ f.nro_factura or '-' }}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-1 rounded text-xs font-medium {% if f.tipo == 'contado' %}bg-blue-100 text-blue-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                            {{ f.tipo|capitalize }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-slate-600 text-xs">{{ (f.metodo_pago or 'efectivo')|capitalize }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-blue-600">${{ "%.2f"|format(f.monto_usd or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="bg-slate-100 border-t-2 border-slate-300 font-bold">
+                <tr>
+                    <td colspan="5" class="px-4 py-3 text-right">TOTAL PAGADO A PROVEEDORES:</td>
+                    <td class="px-4 py-3 text-right text-blue-600">${{ "%.2f"|format(total_facturas_prov_rango) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-8 text-slate-400">
+        <i class="fas fa-truck text-3xl mb-2 block opacity-40"></i>
+        <p class="text-sm">No hay facturas de proveedores pagadas en este rango</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Top productos -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden anim-hover-lift">
+    <div class="px-5 py-4 border-b border-slate-200">
+        <h3 class="font-semibold text-slate-800">
+            <i class="fas fa-trophy text-amber-500 mr-2"></i>Top 10 productos del rango
+        </h3>
+    </div>
+    {% if top_productos %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">#</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Producto</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Código</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Vendidos</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Ingresos USD</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for p in top_productos %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 text-slate-400 font-bold">{{ loop.index }}</td>
+                    <td class="px-4 py-3 font-medium text-slate-800">{{ p.nombre }}</td>
+                    <td class="px-4 py-3 text-slate-500 text-xs">{{ p.codigo or '-' }}</td>
+                    <td class="px-4 py-3 text-right">{{ p.total_vendido }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-[#4ADEDE]">${{ "%.2f"|format(p.ingresos) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-12 text-slate-400">
+        <i class="fas fa-chart-bar text-4xl mb-3"></i>
+        <p>Sin datos en este rango</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+// ============ DATOS DESDE PYTHON ============
+var diasData = {{ ventas_por_dia|tojson }};
+
+// ============ GRÁFICO COMPACTO DE VENTAS POR DÍA ============
+if (diasData.length > 0) {
+    var labels = diasData.map(function(d) { return d.dia_fmt; });
+    var dataUSD = diasData.map(function(d) { return d.total_usd; });
+    var dataGanancia = diasData.map(function(d) { return d.ganancia_usd; });
+    
+    new Chart(document.getElementById('chartDias'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Ventas USD',
+                    data: dataUSD,
+                    borderColor: '#1CA7EC',
+                    backgroundColor: 'rgba(28, 167, 236, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#1CA7EC',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Ganancia USD',
+                    data: dataGanancia,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    borderWidth: 2,
+                    borderDash: [5, 3],
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        padding: 8,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 } }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        font: { size: 10 },
+                        callback: function(value) { return '$' + value; }
+                    }
+                }
+            }
+        }
+    });
+} else {
+    // Sin datos → mostrar mensaje
+    var cont = document.getElementById('chartDias').parentElement;
+    cont.innerHTML = '<div class="text-center py-12 text-slate-400"><i class="fas fa-chart-line text-3xl mb-2"></i><p class="text-sm">Sin ventas en este rango de fechas</p></div>';
+}
+
+// ============ RANGOS RÁPIDOS ============
+function setRango(tipo) {
+    var hoy = new Date();
+    var desde = new Date();
+    var hasta = new Date();
+    
+    if (tipo === 'hoy') {
+        // hoy mismo
+    } else if (tipo === 'semana') {
+        desde.setDate(hoy.getDate() - 6);
+    } else if (tipo === 'mes') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    } else if (tipo === 'mes_anterior') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+        hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    } else if (tipo === 'año') {
+        desde = new Date(hoy.getFullYear(), 0, 1);
+    }
+    
+    document.querySelector('input[name="fecha_desde"]').value = formatDate(desde);
+    document.querySelector('input[name="fecha_hasta"]').value = formatDate(hasta);
+    document.querySelector('form').submit();
+}
+
+function formatDate(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+}
+</script>
+{% endblock %}

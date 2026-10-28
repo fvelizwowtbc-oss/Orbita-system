@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Mis Vendedores{% endblock %}
+{% block page_title %}Mis Vendedores{% endblock %}
+{% block page_subtitle %}{{ limites.total }} de {{ limites.max }} vendedores{% endblock %}
+{% block sidebar %}{% include 'vip/_sidebar.html' %}{% endblock %}
+
+{% block header_actions %}
+{% if limites.puede_crear %}
+<a href="{{ url_for('vip.crear') }}" class="btn btn-primary">
+    <i class="fas fa-plus"></i>
+    <span>Nuevo Vendedor</span>
+</a>
+{% else %}
+<button disabled class="btn bg-slate-100 text-slate-400 cursor-not-allowed" title="Limite de {{ limites.max }} vendedores alcanzado">
+    <i class="fas fa-lock"></i>
+    <span>Limite alcanzado</span>
+</button>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- Info de limite -->
+<div class="bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] rounded-2xl p-5 mb-6 text-white flex items-center justify-between">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+            <i class="fas fa-user-tie text-xl"></i>
+        </div>
+        <div>
+            <p class="text-xs text-white/70 uppercase tracking-wider">Vendedores activos</p>
+            <p class="text-2xl font-bold">{{ limites.total }} / {{ limites.max }}</p>
+        </div>
+    </div>
+    <div class="text-right">
+        <p class="text-xs text-white/70">Espacios disponibles</p>
+        <p class="text-2xl font-bold">{{ limites.max - limites.total }}</p>
+    </div>
+</div>
+
+{% if vendedores %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for v in vendedores %}
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-[#1CA7EC] transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/5 group">
+        
+        <!-- Header con avatar -->
+        <div class="p-5 border-b border-slate-100">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] flex items-center justify-center text-white font-bold text-lg">
+                        {{ v.vendedor.nombre[0] | upper }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-slate-900 truncate">{{ v.vendedor.nombre }}</p>
+                        <p class="text-xs text-slate-500 truncate">{{ v.vendedor.email }}</p>
+                    </div>
+                </div>
+                {% if not current_user.suscripcion_vigente %}
+                <span class="badge bg-red-100 text-red-700 flex-shrink-0" title="El negocio no tiene suscripcion activa">
+                    <i class="fas fa-lock text-[6px]"></i> Desactivado
+                </span>
+                {% elif v.activo %}
+                <span class="badge bg-emerald-100 text-emerald-700 flex-shrink-0">
+                    <i class="fas fa-circle text-[6px]"></i> Activo
+                </span>
+                {% else %}
+                <span class="badge bg-slate-100 text-slate-600 flex-shrink-0">
+                    <i class="fas fa-circle text-[6px]"></i> Inactivo
+                </span>
+                {% endif %}
+            </div>
+            
+            {% if v.vendedor.telefono %}
+            <p class="text-xs text-slate-500 flex items-center gap-1">
+                <i class="fas fa-phone text-[10px]"></i>
+                {{ v.vendedor.telefono }}
+            </p>
+            {% endif %}
+        </div>
+        
+        <!-- Stats -->
+        <div class="p-5 bg-slate-50/50">
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                    <p class="text-xs text-slate-500 mb-0.5">Ventas hoy</p>
+                    <p class="font-bold text-slate-900">{{ v._stats.ventas_hoy }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 mb-0.5">Total hoy</p>
+                    <p class="font-bold text-emerald-600">${{ "%.2f"|format(v._stats.total_hoy_usd) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 mb-0.5">Ventas mes</p>
+                    <p class="font-bold text-slate-900">{{ v._stats.ventas_mes }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 mb-0.5">Total mes</p>
+                    <p class="font-bold text-emerald-600">${{ "%.2f"|format(v._stats.total_mes_usd) }}</p>
+                </div>
+            </div>
+            
+            <!-- Permisos -->
+            <div class="flex flex-wrap gap-1 mb-4">
+                {% if v.puede_editar_inventario %}
+                <span class="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
+                    <i class="fas fa-edit"></i> Inv
+                </span>
+                {% endif %}
+                {% if v.puede_ver_clientes %}
+                <span class="text-[10px] px-2 py-0.5 rounded bg-purple-100 text-purple-700 font-medium">
+                    <i class="fas fa-users"></i> Cli
+                </span>
+                {% endif %}
+                {% if v.puede_ver_facturas %}
+                <span class="text-[10px] px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                    <i class="fas fa-file"></i> Fact
+                </span>
+                {% endif %}
+                {% if not v.puede_editar_inventario and not v.puede_ver_clientes and not v.puede_ver_facturas %}
+                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-500 font-medium">
+                    Sin permisos extra
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Acciones -->
+            <div class="flex gap-2">
+                <a href="{{ url_for('vip.detalle', vendedor_id=v.vendedor_id) }}" 
+                   class="flex-1 text-center py-2 bg-white border border-slate-200 hover:border-[#1CA7EC] hover:text-[#1CA7EC] text-slate-700 rounded-lg text-xs font-medium transition">
+                    <i class="fas fa-eye mr-1"></i> Ver
+                </a>
+                <a href="{{ url_for('vip.editar', vendedor_id=v.vendedor_id) }}" 
+                   class="flex-1 text-center py-2 bg-white border border-slate-200 hover:border-[#1CA7EC] hover:text-[#1CA7EC] text-slate-700 rounded-lg text-xs font-medium transition">
+                    <i class="fas fa-edit mr-1"></i> Editar
+                </a>
+                {% if v.activo %}
+                <form method="POST" action="{{ url_for('vip.desactivar', vendedor_id=v.vendedor_id) }}" class="flex-1"
+                      onsubmit="return confirmarDesactivar('{{ v.vendedor.nombre }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="w-full py-2 bg-white border border-slate-200 hover:border-red-300 hover:text-red-600 text-slate-700 rounded-lg text-xs font-medium transition">
+                        <i class="fas fa-ban mr-1"></i> Off
+                    </button>
+                </form>
+                {% else %}
+                <form method="POST" action="{{ url_for('vip.reactivar', vendedor_id=v.vendedor_id) }}" class="flex-1">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="w-full py-2 bg-white border border-slate-200 hover:border-emerald-300 hover:text-emerald-600 text-slate-700 rounded-lg text-xs font-medium transition">
+                        <i class="fas fa-check mr-1"></i> On
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Estado vacio -->
+<div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+    <div class="w-20 h-20 bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-user-tie text-white text-3xl"></i>
+    </div>
+    <h3 class="text-xl font-bold text-slate-900 mb-2">No tienes vendedores aún</h3>
+    <p class="text-slate-500 text-sm mb-6 max-w-md mx-auto">
+        Crea vendedores para que puedan registrar ventas en tu negocio. 
+        Podrás ver sus ventas, activarlos o desactivarlos cuando quieras.
+    </p>
+    <a href="{{ url_for('vip.crear') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i>
+        <span>Crear mi primer vendedor</span>
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmarDesactivar(nombre) {
+    return confirm('¿Desactivar al vendedor "' + nombre + '"? No podrá iniciar sesión hasta que lo reactives.');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,865 @@
+﻿{% extends 'base.html' %}
+{% block title %}Ventas{% endblock %}
+{% block page_title %}Punto de Venta{% endblock %}
+{% block page_subtitle %}{{ stats_mes.ventas }} ventas este mes · ${{ "%.2f"|format(stats_mes.ingresos_usd) }}{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-2 space-y-4">
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
+            <div class="relative">
+                <input type="text" id="buscadorProductos" placeholder="Buscar o escanear producto..."
+                       class="w-full px-4 py-3 pr-14 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+                       oninput="filtrarProductos()">
+                <button type="button" onclick="abrirEscanerVentas()"
+                        title="Escanear codigo de barras"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg bg-[#1CA7EC] hover:bg-[#1892d4] text-white transition" data-ripple>
+                    <i class="fas fa-camera"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
+            <div id="gridProductos" class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto">
+                {% for p in productos %}
+                {% set tiene_variantes = p.variantes.count() > 0 %}
+                <div class="producto-item text-left p-3 border-2 rounded-lg transition cursor-pointer
+                            {% if tiene_variantes %}border-[#c7c9fb] hover:border-[#787FF6] hover:bg-[#f5f3ff]
+                            {% else %}border-slate-200 hover:border-[#1CA7EC] hover:bg-[#e6f7ff]{% endif %}"
+                     data-nombre="{{ p.nombre|lower }}"
+                     data-codigo="{{ p.codigo|lower }}"
+                     data-id="{{ p.id }}"
+                     data-precio="{{ p.precio_venta_usd }}"
+                     data-stock="{{ p.stock_actual }}"
+                     data-tiene-variantes="{{ '1' if tiene_variantes else '0' }}"
+                     onclick="agregarDesdeElemento(this)">
+                    <div class="flex items-center gap-2 mb-2">
+                        {% if p.imagen_url %}
+                            <img src="{{ p.imagen_url }}" class="w-10 h-10 rounded object-cover" alt="">
+                        {% else %}
+                            <div class="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
+                                <i class="fas fa-box text-slate-400"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-medium truncate">{{ p.nombre }}</p>
+                            <p class="text-xs text-slate-500">{{ p.codigo }}</p>
+                        </div>
+                        {% if tiene_variantes %}
+                        <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-[#ede9fe] text-[#787FF6] border border-[#c7c9fb]"
+                              title="{{ p.variantes.count() }} variantes disponibles">
+                            <i class="fas fa-layer-group mr-1"></i>{{ p.variantes.count() }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold {% if tiene_variantes %}text-[#787FF6]{% else %}text-[#1CA7EC]{% endif %}">
+                            ${{ "%.2f"|format(p.precio_venta_usd) }}
+                        </span>
+                        <span class="text-xs text-slate-500">Stock: {{ p.stock_actual }}</span>
+                    </div>
+                    {% if tiene_variantes %}
+                    <div class="mt-1 text-[10px] text-[#787FF6] font-medium">
+                        <i class="fas fa-mouse-pointer mr-1"></i>Click para elegir variante
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        
+        <!-- BLOQUE DEL TOTAL GIGANTE -->
+        <div id="bloqueTotal" class="bg-gradient-to-br from-[#1F2F98] via-[#1a5fbb] to-[#1CA7EC] rounded-2xl p-5 text-white text-center shadow-lg shadow-blue-500/20 sticky top-4 z-20 transition-all duration-300">
+            <div class="flex items-baseline justify-center gap-1 mb-2">
+                <span class="text-4xl md:text-5xl font-bold tracking-tight" id="totalBs">0,00</span>
+                <span class="text-xl md:text-2xl font-semibold text-white/80">Bs</span>
+            </div>
+            <p class="text-sm text-white/80 mb-1">
+                <span id="totalUsd" class="font-semibold">$0.00</span> <span class="text-white/60">USD</span>
+            </p>
+            <p class="text-xs text-white/50">
+                Tasa: Bs. <span id="tasaActual">0,00</span>
+            </p>
+        </div>
+
+        <!-- CARRITO -->
+        <div class="bg-white rounded-xl shadow-sm border sticky top-4">
+            <div class="p-4 border-b flex items-center justify-between">
+                <h3 class="font-bold flex items-center gap-2">
+                    <i class="fas fa-shopping-cart text-[#1CA7EC]"></i>
+                    <span>Carrito</span>
+                    <span id="contadorItems" class="text-xs px-2 py-0.5 rounded-full bg-[#e6f7ff] text-[#1CA7EC] font-semibold">0</span>
+                </h3>
+                <button onclick="vaciarCarrito()" class="text-xs text-red-600 hover:text-red-800 font-medium">
+                    <i class="fas fa-trash mr-1"></i>Vaciar
+                </button>
+            </div>
+
+            <div id="carrito" class="max-h-[280px] overflow-y-auto p-3 space-y-2">
+                <div class="text-center py-6 text-slate-400">
+                    <i class="fas fa-shopping-bag text-3xl mb-2 block opacity-40"></i>
+                    <p class="text-sm">Carrito vacío</p>
+                    <p class="text-xs mt-1 text-slate-300">Agrega productos para empezar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCIONES -->
+        <div class="bg-white rounded-xl shadow-sm border p-4 space-y-3">
+            <div>
+                <label class="block text-xs font-medium mb-1">Tipo de venta <span class="text-red-500">*</span></label>
+                <select id="tipoVenta" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none" onchange="toggleTipoVenta()">
+                    <option value="contado">Contado</option>
+                    <option value="credito">Crédito</option>
+                    <option value="cashea">🏪 Cashea</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium mb-1">
+                    Cliente
+                    <span id="labelClienteRequerido" class="text-red-500 hidden">*</span>
+                </label>
+                <select id="clienteVenta" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+                    <option value="" data-nombre="Consumidor Final">Consumidor Final</option>
+                    {% for c in clientes %}
+                        <option value="{{ c.id }}" data-nombre="{{ c.nombre }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+                <p id="avisoCliente" class="hidden text-xs text-amber-600 mt-1">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Las ventas a crédito requieren un cliente registrado
+                </p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium mb-1">Método de pago</label>
+                <select id="metodoPago" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+                    <option value="efectivo">Efectivo (Bs)</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="pago_movil">Pago Móvil</option>
+                    <option value="divisa">Divisa (USD)</option>
+                    <option value="punto">Punto de Venta</option>
+                    <option value="biopago">Biopago</option>
+                </select>
+            </div>
+
+            <!-- PANEL CASHEA -->
+            <div id="panelCashea" class="hidden space-y-3 p-4 bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fas fa-hand-holding-usd text-purple-600 text-lg"></i>
+                    <div>
+                        <p class="font-bold text-sm text-purple-800">CASHEA - Pago en cuotas</p>
+                        <p class="text-[10px] text-purple-600">Los datos del comprador son obligatorios</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">
+                        Tipo de Cashea <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btnCasheaCotidiana" onclick="seleccionarTipoCashea('cotidiana')"
+                                class="py-2 px-3 rounded-lg border-2 text-xs font-medium transition border-purple-500 bg-purple-50 text-purple-800">
+                            <i class="fas fa-calendar-day mr-1"></i> Cotidiana
+                            <span class="block text-[10px] opacity-70 mt-0.5">Inicial + 1 cuota</span>
+                        </button>
+                        <button type="button" id="btnCasheaNormal" onclick="seleccionarTipoCashea('normal')"
+                                class="py-2 px-3 rounded-lg border-2 text-xs font-medium transition border-slate-200 bg-white text-slate-600">
+                            <i class="fas fa-calendar-alt mr-1"></i> Normal
+                            <span class="block text-[10px] opacity-70 mt-0.5">3 a 12 cuotas</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="cashea_tipo" value="cotidiana">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">
+                            % Inicial <span class="text-red-500">*</span>
+                        </label>
+                        <select id="cashea_porcentaje" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" onchange="actualizarPreviewCashea()">
+                            <option value="0">0% (sin inicial)</option>
+                            <option value="10">10%</option>
+                            <option value="20" selected>20%</option>
+                            <option value="30">30%</option>
+                            <option value="40">40%</option>
+                            <option value="50">50%</option>
+                            <option value="60">60%</option>
+                        </select>
+                    </div>
+                    <div id="campoCuotasCashea">
+                        <label class="block text-xs font-medium text-slate-700 mb-1">
+                            Cuotas <span class="text-red-500">*</span>
+                        </label>
+                        <select id="cashea_cuotas" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" onchange="actualizarPreviewCashea()">
+                            <option value="1">1 cuota</option>
+                            <option value="2">2 cuotas</option>
+                            <option value="3" selected>3 cuotas</option>
+                            <option value="6">6 cuotas</option>
+                            <option value="9">9 cuotas</option>
+                            <option value="12">12 cuotas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">
+                        Nombre del comprador <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="cashea_nombre" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="Ej: Juan Pérez">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">
+                            Cédula <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cashea_cedula" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="V-12345678">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">
+                            Teléfono <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cashea_telefono" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="0414-1234567">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-3 border border-purple-200">
+                    <p class="text-xs font-semibold text-slate-600 mb-2">Resumen:</p>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">Inicial:</span>
+                            <span class="font-semibold text-slate-800" id="preview_inicial">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">Saldo a financiar:</span>
+                            <span class="font-semibold text-slate-800" id="preview_saldo">$0.00</span>
+                        </div>
+                        <div class="flex justify-between border-t border-slate-200 pt-1">
+                            <span class="text-slate-600" id="preview_cuotas_label">6 cuotas de:</span>
+                            <span class="font-bold text-purple-700" id="preview_monto_cuota">$0.00</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 pt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Cada cuota vence cada 14 días
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL CRÉDITO -->
+            <div id="camposCredito" class="hidden space-y-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p class="text-xs text-amber-700 font-medium">
+                    <i class="fas fa-info-circle mr-1"></i>Venta a crédito
+                </p>
+                <p class="text-xs text-amber-600">
+                    Ingresa el monto que el cliente está cancelando ahora.
+                </p>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Cancelado (USD)</label>
+                        <input type="number" step="0.01" min="0" id="montoInicial" value="0"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                               oninput="calcularDesdeUSD()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Cancelado (Bs)</label>
+                        <input type="number" step="0.01" min="0" id="montoInicialBs" value="0"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                               oninput="calcularDesdeBs()">
+                    </div>
+                </div>
+
+                <div class="text-xs text-slate-600 bg-white rounded-lg p-2 border border-amber-100">
+                    <div class="flex justify-between mb-1">
+                        <span>Tasa aplicada:</span>
+                        <span class="font-semibold" id="tasaCredito">Bs. 0,00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Saldo pendiente:</span>
+                        <span class="font-semibold text-amber-700" id="saldoPendiente">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ BOTÓN COBRAR (AHORA SÍ, DENTRO DE LA TARJETA Y AL FINAL) -->
+            <button onclick="abrirModalPago()" id="btnProcesar"
+                    class="w-full bg-gradient-to-r from-[#1CA7EC] to-[#787FF6] hover:opacity-95 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none mt-2"
+                    disabled>
+                <i class="fas fa-cash-register mr-2"></i> COBRAR
+            </button>
+
+        </div> <!-- FIN DE ACCIONES -->
+    </div> <!-- FIN DE LA COLUMNA DERECHA -->
+</div> <!-- FIN DEL GRID -->
+
+<!-- MODAL DE PAGO Y VUELTO -->
+<div id="modalPago" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[95vh] overflow-y-auto">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] rounded-t-2xl sticky top-0">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                        <i class="fas fa-cash-register"></i>
+                        Cobrar venta
+                    </h3>
+                    <p class="text-xs text-white/70 mt-1">Ingresa el monto que paga el cliente</p>
+                </div>
+                <button type="button" onclick="cerrarModalPago()" class="text-white/70 hover:text-white">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="px-6 py-5 bg-slate-50 border-b border-slate-200 text-center">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Total a cobrar</p>
+            <p class="text-3xl font-bold text-[#1F2F98]" id="totalCobrarBs">Bs. 0,00</p>
+            <p class="text-sm text-slate-500 mt-1" id="totalCobrarUsd">$0.00 USD</p>
+            <p class="text-xs text-slate-400 mt-0.5">Tasa: Bs. <span id="tasaModal">0,00</span></p>
+        </div>
+        
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class="fas fa-dollar-sign text-emerald-600 mr-1"></i>
+                    Cliente paga con USD
+                </label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                    <input type="number" step="0.01" min="0" id="pagaUsd" value=""
+                           class="w-full pl-8 pr-3 py-3 border-2 border-slate-200 rounded-xl text-lg font-semibold focus:border-[#1CA7EC] focus:ring-4 focus:ring-[#1CA7EC]/10 outline-none transition"
+                           placeholder="0.00"
+                           oninput="calcularVuelto()">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                    <i class="fas fa-money-bill-wave text-blue-600 mr-1"></i>
+                    Cliente paga con Bs
+                </label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">Bs</span>
+                    <input type="number" step="0.01" min="0" id="pagaBs" value=""
+                           class="w-full pl-10 pr-3 py-3 border-2 border-slate-200 rounded-xl text-lg font-semibold focus:border-[#1CA7EC] focus:ring-4 focus:ring-[#1CA7EC]/10 outline-none transition"
+                           placeholder="0,00"
+                           oninput="calcularVuelto()">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="pagoRapido('exacto')" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium transition">
+                    Pago exacto
+                </button>
+                <button type="button" onclick="pagoRapido('dolar20')" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium transition">
+                    $20
+                </button>
+                <button type="button" onclick="pagoRapido('dolar50')" class="py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium transition">
+                    $50
+                </button>
+            </div>
+            
+            <div id="bloqueVuelto" class="hidden rounded-xl p-4 border-2 transition-all">
+                <p class="text-xs uppercase tracking-wider font-semibold mb-3 text-center" id="vueltoLabel">
+                    <i class="fas fa-hand-holding-usd mr-1"></i>
+                    VUELTO
+                </p>
+                
+                <div id="vueltoPrincipalContainer" class="text-center">
+                    <p class="text-xs text-slate-600 mb-1" id="vueltoMonedaLabel">Entregar</p>
+                    <p class="text-4xl font-bold" id="vueltoPrincipal">Bs. 0,00</p>
+                </div>
+                
+                <div id="vueltoDesglose" class="hidden mt-3 pt-3 border-t border-slate-200 text-center">
+                    <p class="text-xs text-slate-500 mb-1">También puedes entregar</p>
+                    <p class="text-lg font-bold text-slate-700" id="vueltoDesgloseValor">$0.00</p>
+                </div>
+                
+                <div id="pagoInsuficiente" class="hidden text-center">
+                    <p class="text-sm font-semibold text-red-700 mb-1">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Pago insuficiente
+                    </p>
+                    <p class="text-xs text-red-600">
+                        Falta <strong id="faltaMonto">Bs. 0,00</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex gap-2 sticky bottom-0">
+            <button type="button" onclick="cerrarModalPago()" 
+                    class="flex-1 px-4 py-3 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-100 transition">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
+            </button>
+            <button type="button" onclick="confirmarVenta()" id="btnConfirmarVenta"
+                    class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:opacity-95 text-white font-semibold px-4 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20">
+                <i class="fas fa-check mr-1"></i> Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Elegir Variante -->
+<div id="modalElegirVariante" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto modal-anim">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <div>
+                <h3 class="font-bold text-lg text-slate-800">
+                    <i class="fas fa-layer-group text-[#787FF6] mr-2"></i>
+                    <span id="tituloProductoVariante">Producto</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">Selecciona una variante para agregar al carrito</p>
+            </div>
+            <button onclick="cerrarModalVariante()" class="text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-6">
+            <div id="listaVariantesModal" class="space-y-2"></div>
+            <div id="variantesModalVacio" class="hidden text-center py-8">
+                <i class="fas fa-box-open text-slate-300 text-4xl mb-3"></i>
+                <p class="text-slate-500 text-sm">Este producto no tiene variantes</p>
+                <p class="text-xs text-slate-400 mt-1">Se agregara como producto simple</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/autofocus_scanner.js') }}" defer></script>
+<script src="{{ url_for('static', filename='vendor/sweetalert2.all.min.js') }}"></script>
+<script>
+function toastError(msg) {
+    if (typeof Swal !== 'undefined') { Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#dc2626' }); }
+    else { console.error(msg); }
+}
+function toastWarning(msg) {
+    if (typeof Swal !== 'undefined') { Swal.fire({ icon: 'warning', title: 'Atencion', text: msg, confirmButtonColor: '#f59e0b' }); }
+    else { console.warn(msg); }
+}
+function toastSuccess(msg) {
+    if (typeof Swal !== 'undefined') { Swal.fire({ icon: 'success', title: msg, timer: 2000, showConfirmButton: false, timerProgressBar: true }); }
+    else { console.log(msg); }
+}
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+const escapeAttr = escapeHtml;
+
+const TASA_BCV = {{ ((tasas.oficial if tasas and tasas.oficial else tasa_bcv) or 0)|float }};
+const TASA_FUENTE = "{{ (tasas.fuente_oficial if tasas else 'BCV') }}";
+const TASA_MODO = "{{ (tasas.modo_tasa if tasas else 'auto') }}";
+const CSRF = "{{ csrf_token() }}";
+
+let carrito = [];
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (!TASA_BCV || TASA_BCV <= 0) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error', title: 'Tasa no disponible',
+                html: '<p>No se pudo obtener la tasa BCV.<br>El cobro está bloqueado.</p>' +
+                      '<p style="font-size:12px;color:#64748b;margin-top:8px;">Recarga la página o configura la tasa manualmente.</p>',
+                allowOutsideClick: false, confirmButtonText: 'Recargar', confirmButtonColor: '#dc2626',
+            }).then(function () { location.reload(); });
+        } else { alert('Tasa BCV no disponible. El cobro está bloqueado.'); }
+    }
+    var selMetodo = document.getElementById('metodoPago');
+    if (selMetodo) selMetodo.addEventListener('change', toggleCashea);
+});
+
+function agregarDesdeElemento(el) {
+    var id = parseInt(el.getAttribute('data-id'));
+    var nombreEl = el.querySelector('p.font-medium');
+    var nombre = nombreEl ? nombreEl.textContent.trim() : 'Producto';
+    var precio = parseFloat(el.getAttribute('data-precio'));
+    var stock = parseInt(el.getAttribute('data-stock'));
+    var tieneVariantes = el.getAttribute('data-tiene-variantes') === '1';
+
+    if (isNaN(id) || isNaN(precio)) { toastError('Datos del producto invalidos'); return; }
+
+    if (tieneVariantes) { abrirModalVariante(id, nombre); }
+    else { agregarAlCarrito(id, nombre, precio, stock, null, null); }
+}
+
+function agregarAlCarrito(id, nombre, precio, stock, varianteId, nombreVariante) {
+    var vid = varianteId || null;
+    var nombreFinal = nombreVariante ? (nombre + ' — ' + nombreVariante) : nombre;
+    var existente = carrito.find(function (i) { return i.producto_id === id && (i.variante_id || null) === vid; });
+
+    if (existente) {
+        if (existente.cantidad >= stock) {
+            Swal.fire({ icon: 'warning', title: 'Sin stock', text: 'No hay más unidades disponibles', timer: 2000, showConfirmButton: false });
+            return;
+        }
+        existente.cantidad++;
+    } else {
+        carrito.push({ producto_id: id, variante_id: vid, nombre: nombreFinal, precio_usd: precio, cantidad: 1, stock: stock });
+    }
+    renderCarrito();
+}
+
+function abrirModalVariante(productoId, nombreProducto) {
+    document.getElementById('tituloProductoVariante').textContent = nombreProducto;
+    fetch(window.location.origin + '/user/producto/' + productoId + '/datos')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var variantes = data.variantes || [];
+            var cont = document.getElementById('listaVariantesModal');
+            var vacio = document.getElementById('variantesModalVacio');
+            if (variantes.length === 0) { cont.innerHTML = ''; vacio.classList.remove('hidden'); }
+            else {
+                vacio.classList.add('hidden');
+                var html = '';
+                variantes.forEach(function (v) {
+                    var stock = v.stock_actual || 0;
+                    var precio = v.precio_venta_usd || data.precio_venta_usd;
+                    var disabled = stock <= 0;
+                    var onclickAttr = disabled ? '' : 'onclick="elegirVariante(' + productoId + ', ' + v.id + ', ' + stock + ', ' + precio + ', \'' + escapeAttr(nombreProducto) + '\', \'' + escapeAttr(v.nombre) + '\')"';
+                    html += '<button type="button" ' + (disabled ? 'disabled' : '') + ' ' + onclickAttr +
+                        ' class="w-full text-left p-4 rounded-lg border-2 transition ' + (disabled ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'bg-white border-slate-200 hover:border-[#787FF6] hover:bg-[#f5f3ff] cursor-pointer') + '">' +
+                        '<div class="flex items-center justify-between"><div class="flex items-center gap-3">' +
+                        '<div class="w-10 h-10 rounded-lg ' + (disabled ? 'bg-slate-200' : 'bg-[#ede9fe]') + ' flex items-center justify-center"><i class="fas fa-tag ' + (disabled ? 'text-slate-400' : 'text-[#787FF6]') + '"></i></div>' +
+                        '<div><p class="font-semibold ' + (disabled ? 'text-slate-400' : 'text-slate-800') + '">' + escapeHtml(v.nombre) + '</p>' + (v.codigo ? '<p class="text-xs text-slate-500">Cod: ' + escapeHtml(v.codigo) + '</p>' : '') + '</div></div>' +
+                        '<div class="text-right"><p class="font-bold ' + (disabled ? 'text-slate-400' : 'text-[#4ADEDE]') + '">$' + parseFloat(precio).toFixed(2) + '</p><p class="text-xs ' + (disabled ? 'text-red-500 font-semibold' : 'text-slate-500') + '">' + (disabled ? 'Agotado' : 'Stock: ' + stock) + '</p></div></div></button>';
+                });
+                cont.innerHTML = html;
+            }
+            document.getElementById('modalElegirVariante').classList.remove('hidden');
+        })
+        .catch(function (e) { toastError('Error cargando variantes: ' + e.message); });
+}
+
+function cerrarModalVariante() { document.getElementById('modalElegirVariante').classList.add('hidden'); }
+function elegirVariante(productoId, varianteId, stock, precio, nombreProducto, nombreVariante) { agregarAlCarrito(productoId, nombreProducto, precio, stock, varianteId, nombreVariante); cerrarModalVariante(); }
+
+function renderCarrito() {
+    var cont = document.getElementById('carrito');
+    if (!cont) return;
+    var totalUsd = 0, totalItems = 0;
+    carrito.forEach(function (item) { totalUsd += item.cantidad * item.precio_usd; totalItems += item.cantidad; });
+    var totalBs = totalUsd * TASA_BCV;
+    
+    var elTotalBs = document.getElementById('totalBs');
+    if (elTotalBs) elTotalBs.textContent = totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    var elTotalUsd = document.getElementById('totalUsd');
+    if (elTotalUsd) elTotalUsd.textContent = '$' + totalUsd.toFixed(2);
+    var elTasa = document.getElementById('tasaActual');
+    if (elTasa) elTasa.textContent = TASA_BCV.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    var elContador = document.getElementById('contadorItems');
+    if (elContador) elContador.textContent = totalItems;
+    
+    var btn = document.getElementById('btnProcesar');
+    if (btn) btn.disabled = (carrito.length === 0) || !TASA_BCV || TASA_BCV <= 0;
+    
+    if (elTotalBs && window._lastTotalBs !== totalBs && totalBs > 0) {
+        elTotalBs.style.transform = 'scale(1.08)';
+        setTimeout(function () { elTotalBs.style.transform = 'scale(1)'; }, 200);
+    }
+    window._lastTotalBs = totalBs;
+    
+    if (carrito.length === 0) {
+        cont.innerHTML = '<div class="text-center py-6 text-slate-400"><i class="fas fa-shopping-bag text-3xl mb-2 block opacity-40"></i><p class="text-sm">Carrito vacío</p><p class="text-xs mt-1 text-slate-300">Agrega productos para empezar</p></div>';
+    } else {
+        var html = '';
+        for (var idx = 0; idx < carrito.length; idx++) {
+            var item = carrito[idx];
+            var sub = item.cantidad * item.precio_usd;
+            var subBs = sub * TASA_BCV;
+            html += '<div class="flex items-start gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">' +
+                '<div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">' + escapeHtml(item.nombre) + '</p>' +
+                '<p class="text-xs text-slate-500 mt-0.5">$' + item.precio_usd.toFixed(2) + ' × ' + item.cantidad + '</p>' +
+                '<p class="text-xs font-semibold text-[#1CA7EC] mt-0.5">Bs. ' + subBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</p></div>' +
+                '<div class="flex flex-col items-end gap-1"><button type="button" onclick="quitar(' + idx + ')" class="text-red-400 hover:text-red-600 text-xs" tabindex="-1"><i class="fas fa-times"></i></button>' +
+                '<div class="flex items-center gap-1"><button type="button" onclick="cambiarCantidad(' + idx + ', -1)" class="w-6 h-6 rounded bg-white border border-slate-200 text-xs hover:bg-slate-100" tabindex="-1">−</button>' +
+                '<input type="number" class="cantidad-input w-12 h-6 text-center border border-slate-300 rounded text-xs focus:ring-2 focus:ring-[#1CA7EC] outline-none" value="' + item.cantidad + '" min="1" max="' + item.stock + '" data-idx="' + idx + '" onchange="setCantidadCarrito(' + idx + ', this.value)" onkeydown="cantidadKeydown(event, ' + idx + ')" onfocus="this.select()">' +
+                '<button type="button" onclick="cambiarCantidad(' + idx + ', 1)" class="w-6 h-6 rounded bg-white border border-slate-200 text-xs hover:bg-slate-100" tabindex="-1">+</button></div></div></div>';
+        }
+        cont.innerHTML = html;
+    }
+    if (document.getElementById('panelCashea') && !document.getElementById('panelCashea').classList.contains('hidden')) { actualizarPreviewCashea(); }
+    if (typeof actualizarSaldoPendiente === 'function') actualizarSaldoPendiente();
+}
+
+function setCantidadCarrito(idx, valor) {
+    var nueva = parseInt(valor);
+    if (isNaN(nueva) || nueva < 1) { renderCarrito(); return; }
+    var item = carrito[idx];
+    if (nueva > item.stock) {
+        if (typeof Swal !== 'undefined') { Swal.fire({ icon: 'warning', title: 'Stock insuficiente', text: 'Solo hay ' + item.stock + ' unidades disponibles', timer: 1500, showConfirmButton: false }); }
+        else { toastWarning('Stock insuficiente. Maximo: ' + item.stock); }
+        renderCarrito(); return;
+    }
+    item.cantidad = nueva; renderCarrito();
+    setTimeout(function () { var inputs = document.querySelectorAll('.cantidad-input'); if (inputs[idx]) { inputs[idx].focus(); inputs[idx].select(); } }, 30);
+}
+
+function cantidadKeydown(e, idx) {
+    if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); var inputs = document.querySelectorAll('.cantidad-input'); var siguiente = idx + 1; if (inputs[siguiente]) { inputs[siguiente].focus(); inputs[siguiente].select(); } }
+    else if (e.key === 'Escape') { renderCarrito(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); var val = parseInt(e.target.value) || 0; e.target.value = val + 1; setCantidadCarrito(idx, val + 1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); var val = parseInt(e.target.value) || 1; if (val > 1) { e.target.value = val - 1; setCantidadCarrito(idx, val - 1); } }
+}
+
+function cambiarCantidad(idx, delta) {
+    var item = carrito[idx]; var nueva = item.cantidad + delta;
+    if (nueva < 1) return quitar(idx);
+    if (nueva > item.stock) { Swal.fire({ icon: 'warning', title: 'Sin stock', timer: 1500, showConfirmButton: false }); return; }
+    item.cantidad = nueva; renderCarrito();
+}
+function quitar(idx) { carrito.splice(idx, 1); renderCarrito(); }
+function vaciarCarrito() {
+    if (carrito.length === 0) { Swal.fire({ icon: 'info', title: 'Carrito vacío', text: 'No hay productos para eliminar', timer: 1500, showConfirmButton: false }); return; }
+    Swal.fire({ title: '¿Vaciar carrito?', html: '<p style="color:#64748b;">Se eliminarán <strong>' + carrito.length + '</strong> producto(s) del carrito.</p>', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc2626', cancelButtonColor: '#64748b', confirmButtonText: 'Sí, vaciar', cancelButtonText: 'Cancelar', reverseButtons: true, focusCancel: true })
+    .then(function (result) { if (result.isConfirmed) { carrito = []; renderCarrito(); Swal.fire({ icon: 'success', title: '¡Carrito vaciado!', timer: 1500, showConfirmButton: false, timerProgressBar: true }); } });
+}
+
+function normalizar(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+function filtrarProductos() {
+    var q = normalizar(document.getElementById('buscadorProductos').value);
+    document.querySelectorAll('.producto-item').forEach(function (el) {
+        var nombre = normalizar(el.dataset.nombre); var codigo = normalizar(el.dataset.codigo);
+        var match = nombre.indexOf(q) !== -1 || codigo.indexOf(q) !== -1;
+        el.style.display = match ? '' : 'none';
+    });
+}
+
+function toggleTipoVenta() {
+    var tipo = document.getElementById('tipoVenta').value;
+    var camposCredito = document.getElementById('camposCredito');
+    var panelCashea = document.getElementById('panelCashea');
+    var labelClienteReq = document.getElementById('labelClienteRequerido');
+    var avisoCliente = document.getElementById('avisoCliente');
+    var clienteSel = document.getElementById('clienteVenta');
+    var btnProcesar = document.getElementById('btnProcesar');
+    if (!btnProcesar) return;
+    camposCredito.classList.add('hidden'); panelCashea.classList.add('hidden');
+    if (tipo === 'contado') {
+        labelClienteReq.classList.add('hidden'); avisoCliente.classList.add('hidden'); clienteSel.classList.remove('border-amber-400');
+        btnProcesar.setAttribute('onclick', 'abrirModalPago()'); btnProcesar.innerHTML = '<i class="fas fa-cash-register mr-2"></i> COBRAR';
+    } else if (tipo === 'credito') {
+        camposCredito.classList.remove('hidden'); labelClienteReq.classList.remove('hidden'); avisoCliente.classList.remove('hidden'); clienteSel.classList.add('border-amber-400');
+        actualizarTasaCredito();
+        btnProcesar.setAttribute('onclick', 'procesarDirecto()'); btnProcesar.innerHTML = '<i class="fas fa-check mr-2"></i> REGISTRAR CREDITO';
+    } else if (tipo === 'cashea') {
+        panelCashea.classList.remove('hidden'); labelClienteReq.classList.add('hidden'); avisoCliente.classList.add('hidden'); clienteSel.classList.remove('border-amber-400');
+        actualizarPreviewCashea();
+        btnProcesar.setAttribute('onclick', 'procesarDirecto()'); btnProcesar.innerHTML = '<i class="fas fa-hand-holding-usd mr-2"></i> REGISTRAR CASHEA';
+    }
+}
+
+function actualizarTasaCredito() { var elTasa = document.getElementById('tasaCredito'); if (elTasa && typeof TASA_BCV !== 'undefined') { elTasa.textContent = 'Bs. ' + TASA_BCV.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}); } actualizarSaldoPendiente(); }
+function calcularDesdeUSD() { var usd = parseFloat(document.getElementById('montoInicial').value) || 0; var bs = usd * TASA_BCV; document.getElementById('montoInicialBs').value = bs.toFixed(2); actualizarSaldoPendiente(); }
+function calcularDesdeBs() { var bs = parseFloat(document.getElementById('montoInicialBs').value) || 0; var usd = TASA_BCV > 0 ? bs / TASA_BCV : 0; document.getElementById('montoInicial').value = usd.toFixed(2); actualizarSaldoPendiente(); }
+function actualizarSaldoPendiente() {
+    var usd = parseFloat(document.getElementById('montoInicial').value) || 0;
+    var totalCarrito = calcularTotalCarrito();
+    var saldo = totalCarrito - usd; if (saldo < 0) saldo = 0;
+    var el = document.getElementById('saldoPendiente'); if (el) el.textContent = '$' + saldo.toFixed(2);
+}
+function calcularTotalCarrito() { var total = 0; carrito.forEach(function (item) { total += item.cantidad * item.precio_usd; }); return total; }
+
+function toggleCashea() {
+    var metodo = document.getElementById('metodoPago').value;
+    var panel = document.getElementById('panelCashea');
+    if (!panel) return;
+    if (metodo === 'cashea') { panel.classList.remove('hidden'); actualizarPreviewCashea(); }
+    else { var tipo = document.getElementById('tipoVenta').value; if (tipo !== 'cashea') panel.classList.add('hidden'); }
+}
+
+function seleccionarTipoCashea(tipo) {
+    var btnCotidiana = document.getElementById('btnCasheaCotidiana');
+    var btnNormal = document.getElementById('btnCasheaNormal');
+    var inputTipo = document.getElementById('cashea_tipo');
+    var campoCuotas = document.getElementById('campoCuotasCashea');
+    if (!btnCotidiana || !btnNormal || !inputTipo) return;
+    inputTipo.value = tipo;
+    if (tipo === 'cotidiana') {
+        btnCotidiana.className = 'py-2 px-3 rounded-lg border-2 text-xs font-medium transition border-purple-500 bg-purple-50 text-purple-800';
+        btnNormal.className = 'py-2 px-3 rounded-lg border-2 text-xs font-medium transition border-slate-200 bg-white text-slate-600';
+        if (campoCuotas) campoCuotas.style.display = 'block';
+        var selCuotas = document.getElementById('cashea_cuotas'); if (selCuotas) { if (!selCuotas.dataset.anterior) selCuotas.dataset.anterior = selCuotas.value || '3'; selCuotas.value = '1'; }
+    } else {
+        btnNormal.className = 'py-2 px-3 rounded-lg border-2 text-xs font-medium transition border-purple-500 bg-purple-50 text-purple-800';
+        btnCotidiana.className = 'py-2 px-3 rounded-lg border-2 text-xs font-medium transition border-slate-200 bg-white text-slate-600';
+        if (campoCuotas) campoCuotas.style.display = 'block';
+        var selCuotas2 = document.getElementById('cashea_cuotas'); if (selCuotas2) selCuotas2.value = selCuotas2.dataset.anterior || '3';
+    }
+    actualizarPreviewCashea();
+}
+
+function actualizarPreviewCashea() {
+    var elInicial = document.getElementById('preview_inicial');
+    if (!elInicial) return;
+    var totalUsd = calcularTotalCarrito();
+    var tipoCashea = document.getElementById('cashea_tipo') ? document.getElementById('cashea_tipo').value : 'normal';
+    var porcentaje = parseFloat(document.getElementById('cashea_porcentaje').value) || 0;
+    var numCuotas; if (tipoCashea === 'cotidiana') { numCuotas = parseInt(document.getElementById('cashea_cuotas').value) || 1; } else { numCuotas = parseInt(document.getElementById('cashea_cuotas').value) || 3; }
+    var montoInicial = totalUsd * (porcentaje / 100); var saldo = totalUsd - montoInicial; var montoCuota = numCuotas > 0 ? saldo / numCuotas : 0;
+    document.getElementById('preview_inicial').textContent = '$' + montoInicial.toFixed(2);
+    document.getElementById('preview_saldo').textContent = '$' + saldo.toFixed(2);
+    var label = (numCuotas === 1) ? '1 cuota de:' : (numCuotas + ' cuotas de:');
+    document.getElementById('preview_cuotas_label').textContent = label;
+    document.getElementById('preview_monto_cuota').textContent = '$' + montoCuota.toFixed(2);
+}
+
+function abrirModalPago() {
+    if (carrito.length === 0) { return Swal.fire({ icon: 'warning', title: 'Carrito vacío', text: 'Agrega productos antes de cobrar', confirmButtonColor: '#1CA7EC' }); }
+    if (!TASA_BCV || TASA_BCV <= 0) { return Swal.fire({ icon: 'error', title: 'Tasa no disponible', text: 'No se puede cobrar sin tasa BCV válida', confirmButtonColor: '#dc2626' }); }
+    var totalUsd = calcularTotalCarrito(); var totalBs = totalUsd * TASA_BCV;
+    document.getElementById('totalCobrarBs').textContent = 'Bs. ' + totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('totalCobrarUsd').textContent = '$' + totalUsd.toFixed(2) + ' USD';
+    document.getElementById('tasaModal').textContent = TASA_BCV.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('pagaUsd').value = ''; document.getElementById('pagaBs').value = '';
+    document.getElementById('bloqueVuelto').classList.add('hidden');
+    document.getElementById('modalPago').classList.remove('hidden');
+    setTimeout(function () { document.getElementById('pagaUsd').focus(); }, 100);
+}
+function cerrarModalPago() { document.getElementById('modalPago').classList.add('hidden'); }
+
+function calcularVuelto() {
+    var totalUsd = calcularTotalCarrito(); var totalBs = totalUsd * TASA_BCV;
+    var pagaUsd = parseFloat(document.getElementById('pagaUsd').value) || 0; var pagaBs = parseFloat(document.getElementById('pagaBs').value) || 0;
+    var pagoTotalBs = (pagaUsd * TASA_BCV) + pagaBs; var vueltoBs = pagoTotalBs - totalBs;
+    var bloque = document.getElementById('bloqueVuelto'); var principal = document.getElementById('vueltoPrincipal');
+    var principalContainer = document.getElementById('vueltoPrincipalContainer'); var monedaLabel = document.getElementById('vueltoMonedaLabel');
+    var desglose = document.getElementById('vueltoDesglose'); var desgloseValor = document.getElementById('vueltoDesgloseValor');
+    var insuficiente = document.getElementById('pagoInsuficiente'); var label = document.getElementById('vueltoLabel'); var falta = document.getElementById('faltaMonto');
+    if (pagaUsd === 0 && pagaBs === 0) { bloque.classList.add('hidden'); return; }
+    bloque.classList.remove('hidden');
+    if (vueltoBs < -0.01) {
+        bloque.className = 'rounded-xl p-4 border-2 transition-all bg-red-50 border-red-300';
+        label.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Pago insuficiente';
+        label.className = 'text-xs uppercase tracking-wider font-semibold mb-3 text-center text-red-700';
+        principalContainer.classList.add('hidden'); desglose.classList.add('hidden'); insuficiente.classList.remove('hidden');
+        falta.textContent = 'Bs. ' + Math.abs(vueltoBs).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    } else {
+        bloque.className = 'rounded-xl p-4 border-2 transition-all bg-emerald-50 border-emerald-300';
+        label.innerHTML = '<i class="fas fa-hand-holding-usd mr-1"></i>VUELTO';
+        label.className = 'text-xs uppercase tracking-wider font-semibold mb-3 text-center text-emerald-700';
+        principalContainer.classList.remove('hidden'); insuficiente.classList.add('hidden');
+        monedaLabel.textContent = 'Entregar en Bs';
+        principal.textContent = 'Bs. ' + vueltoBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        principal.className = 'text-4xl font-bold text-emerald-700';
+        if (pagaUsd > 0 && pagaBs === 0) { var vueltoUsd = vueltoBs / TASA_BCV; if (vueltoUsd >= 0.5) { desglose.classList.remove('hidden'); desgloseValor.textContent = '$' + vueltoUsd.toFixed(2) + ' USD'; } else { desglose.classList.add('hidden'); } }
+        else { desglose.classList.add('hidden'); }
+    }
+}
+
+function pagoRapido(tipo) {
+    var totalUsd = calcularTotalCarrito(); var totalBs = totalUsd * TASA_BCV;
+    var metodo = document.getElementById('metodoPago').value;
+    if (tipo === 'exacto') { if (metodo === 'divisa') { document.getElementById('pagaUsd').value = totalUsd.toFixed(2); document.getElementById('pagaBs').value = ''; } else { document.getElementById('pagaBs').value = totalBs.toFixed(2); document.getElementById('pagaUsd').value = ''; } }
+    else if (tipo === 'dolar20') { document.getElementById('pagaUsd').value = '20'; document.getElementById('pagaBs').value = ''; }
+    else if (tipo === 'dolar50') { document.getElementById('pagaUsd').value = '50'; document.getElementById('pagaBs').value = ''; }
+    calcularVuelto();
+}
+
+async function confirmarVenta() {
+    var totalUsd = calcularTotalCarrito(); var totalBs = totalUsd * TASA_BCV;
+    var pagaUsd = parseFloat(document.getElementById('pagaUsd').value) || 0; var pagaBs = parseFloat(document.getElementById('pagaBs').value) || 0;
+    var pagoTotalBs = (pagaUsd * TASA_BCV) + pagaBs;
+    if (pagoTotalBs < totalBs - 0.01) { return Swal.fire({ icon: 'warning', title: 'Pago insuficiente', text: 'El monto pagado es menor al total', confirmButtonColor: '#dc2626' }); }
+    var clienteSel = document.getElementById('clienteVenta'); var cliente_id = clienteSel.value || null; var cliente_nombre = clienteSel.options[clienteSel.selectedIndex].dataset.nombre || 'Consumidor Final';
+    var payload = { items: carrito.map(function (i) { return { producto_id: i.producto_id, variante_id: i.variante_id || null, cantidad: i.cantidad, precio_usd: i.precio_usd }; }), cliente_id: cliente_id ? parseInt(cliente_id) : null, cliente_nombre: cliente_nombre, metodo_pago: document.getElementById('metodoPago').value, tipo_venta: document.getElementById('tipoVenta').value, monto_inicial_usd: 0, monto_inicial_ves: 0, observaciones: '', };
+    var btn = document.getElementById('btnConfirmarVenta'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Procesando...';
+    try {
+        var r = await fetch(window.location.origin + '/user/ventas/procesar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify(payload), });
+        var data = await r.json();
+        if (data.success) {
+            cerrarModalPago(); var vueltoBs = pagoTotalBs - totalBs; var vueltoHtml = '';
+            if (vueltoBs > 0.01) { vueltoHtml = '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0;"><div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">VUELTO</div><div style="font-size:20px;font-weight:700;color:#10b981;">Bs. ' + vueltoBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</div></div>'; }
+            Swal.fire({ icon: 'success', title: '¡Venta procesada!', html: '<div style="text-align:left;font-size:0.95em;"><div style="padding:8px 0;border-bottom:1px solid #e2e8f0;"><strong>Factura:</strong> ' + data.nro_factura + '</div><div style="padding:8px 0;border-bottom:1px solid #e2e8f0;"><strong>Total USD:</strong> $' + data.total_usd.toFixed(2) + '</div><div style="padding:8px 0;"><strong>Total VES:</strong> Bs. ' + data.total_ves.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</div>' + vueltoHtml + '</div>', showCancelButton: true, confirmButtonText: '<i class="fas fa-print"></i> Imprimir Ticket', cancelButtonText: '<i class="fas fa-check"></i> Solo Guardar', confirmButtonColor: '#1CA7EC', cancelButtonColor: '#64748b', allowOutsideClick: false, reverseButtons: true })
+            .then(function (result) { if (result.isConfirmed && data.venta_id) { imprimirTicketVenta(data.venta_id); } else { location.reload(); } });
+            carrito = []; renderCarrito();
+        } else { Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#dc2626' }); }
+    } catch (e) { Swal.fire({ icon: 'error', title: 'Error de conexión', text: e.message }); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check mr-1"></i> Confirmar'; }
+}
+
+async function procesarDirecto() {
+    if (carrito.length === 0) { return Swal.fire({ icon: 'warning', title: 'Carrito vacío', text: 'Agrega productos antes de procesar' }); }
+    if (!TASA_BCV || TASA_BCV <= 0) { return Swal.fire({ icon: 'error', title: 'Tasa no disponible', text: 'No se puede procesar sin tasa BCV válida' }); }
+    var tipoVenta = document.getElementById('tipoVenta').value; var clienteSel = document.getElementById('clienteVenta'); var metodoPago = document.getElementById('metodoPago').value;
+    if (tipoVenta === 'credito' && !clienteSel.value) { return Swal.fire({ icon: 'warning', title: 'Cliente requerido', text: 'Las ventas a credito requieren un cliente registrado' }); }
+    var payload = { items: carrito.map(function (i) { return { producto_id: i.producto_id, variante_id: i.variante_id || null, cantidad: i.cantidad, precio_usd: i.precio_usd }; }), cliente_id: clienteSel.value ? parseInt(clienteSel.value) : null, cliente_nombre: clienteSel.options[clienteSel.selectedIndex].dataset.nombre || 'Consumidor Final', metodo_pago: metodoPago, tipo_venta: tipoVenta, monto_inicial_usd: 0, monto_inicial_ves: 0, observaciones: '', };
+    if (tipoVenta === 'credito') { var elMontoUSD = document.getElementById('montoInicial'); var elMontoBs = document.getElementById('montoInicialBs'); payload.monto_inicial_usd = elMontoUSD ? (parseFloat(elMontoUSD.value) || 0) : 0; payload.monto_inicial_ves = elMontoBs ? (parseFloat(elMontoBs.value) || 0) : 0; }
+    if (tipoVenta === 'cashea') {
+        var porcentaje = parseInt(document.getElementById('cashea_porcentaje').value) || 0; var cuotas = parseInt(document.getElementById('cashea_cuotas').value) || 3;
+        var nombre = document.getElementById('cashea_nombre').value.trim(); var cedula = document.getElementById('cashea_cedula').value.trim(); var telefono = document.getElementById('cashea_telefono').value.trim();
+        if (!nombre || !cedula || !telefono) { return Swal.fire({ icon: 'warning', title: 'Datos requeridos', text: 'Cashea requiere nombre, cedula y telefono del comprador' }); }
+        var tipoCashea = document.getElementById('cashea_tipo') ? document.getElementById('cashea_tipo').value : 'normal'; if (tipoCashea === 'cotidiana') cuotas = 1;
+        payload.cashea_porcentaje_inicial = porcentaje; payload.cashea_num_cuotas = cuotas; payload.cashea_nombre_comprador = nombre; payload.cashea_cedula = cedula; payload.cashea_telefono = telefono; payload.cashea_tipo = tipoCashea; payload.cliente_id = null; payload.cliente_nombre = nombre;
+    }
+    var titulo = tipoVenta === 'cashea' ? '¿Registrar venta Cashea?' : '¿Registrar venta a credito?';
+    var htmlConfirm = '<div style="text-align:left;font-size:0.95em;"><div style="padding:6px 0;"><strong>Cliente:</strong> ' + escapeHtml(payload.cliente_nombre) + '</div><div style="padding:6px 0;"><strong>Total:</strong> $' + calcularTotalCarrito().toFixed(2) + '</div>';
+    if (tipoVenta === 'credito') { htmlConfirm += '<div style="padding:6px 0;"><strong>Cancelando ahora:</strong> $' + payload.monto_inicial_usd.toFixed(2) + '</div>'; }
+    htmlConfirm += '</div>';
+    var r = await Swal.fire({ title: titulo, html: htmlConfirm, icon: 'question', showCancelButton: true, confirmButtonColor: '#1CA7EC', cancelButtonColor: '#64748b', confirmButtonText: 'Si, registrar', cancelButtonText: 'Cancelar', reverseButtons: true });
+    if (!r.isConfirmed) return;
+    var btn = document.getElementById('btnProcesar'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Procesando...';
+    try {
+        var resp = await fetch(window.location.origin + '/user/ventas/procesar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify(payload), });
+        var data = await resp.json();
+        if (data.success) { Swal.fire({ icon: 'success', title: 'Venta registrada', text: 'Factura: ' + data.nro_factura, timer: 2000, showConfirmButton: false, timerProgressBar: true }).then(function () { location.reload(); }); carrito = []; renderCarrito(); }
+        else { Swal.fire({ icon: 'error', title: 'Error', text: data.error }); }
+    } catch (e) { Swal.fire({ icon: 'error', title: 'Error de conexion', text: e.message }); }
+    finally { btn.disabled = false; toggleTipoVenta(); }
+}
+
+async function imprimirTicketVenta(ventaId) {
+    try {
+        Swal.fire({ title: 'Imprimiendo ticket...', html: '<i class="fas fa-print fa-2x text-[#1CA7EC]"></i><p style="font-size:12px;color:#64748b;margin-top:8px;">Enviando a POS-58</p>', allowOutsideClick: false, showConfirmButton: false, didOpen: function () { Swal.showLoading(); } });
+        var r = await fetch('/user/ventas/' + ventaId + '/imprimir-ticket', { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+        var data = await r.json();
+        if (data.success) { Swal.fire({ icon: 'success', title: 'Ticket impreso', text: 'Revisa la impresora', timer: 1500, showConfirmButton: false }).then(function () { location.reload(); }); }
+        else { Swal.fire({ icon: 'error', title: 'Error al imprimir', html: '<p style="font-size:13px;">' + escapeHtml(data.error || 'Error desconocido') + '</p><p style="font-size:11px;color:#64748b;margin-top:8px;">Verifica que la POS-58 este encendida y con papel</p>', confirmButtonColor: '#dc2626' }).then(function () { location.reload(); }); }
+    } catch (e) { Swal.fire({ icon: 'error', title: 'Error de conexion', text: e.message }).then(function () { location.reload(); }); }
+}
+</script>
+
+<script src="{{ url_for('static', filename='vendor/html5-qrcode.min.js') }}"></script>
+<script>
+var _scannerVentas = null; var _scannerAbiertoVentas = false;
+function abrirEscanerVentas() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        Swal.fire({ icon: 'info', title: 'Camara no disponible', html: '<p style="font-size:14px;">El navegador bloquea la camara sin HTTPS.</p><p style="font-size:13px;color:#64748b;margin-top:8px;">Para habilitarla, abre Chrome y ve a:<br><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:11px;">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></p>', confirmButtonText: 'Entendido' });
+        return;
+    }
+    if (!document.getElementById('modalEscanerVentas')) {
+        var modalHTML = '<div id="modalEscanerVentas" class="hidden fixed inset-0 bg-black/95 z-[100] flex flex-col"><div class="p-4 flex justify-between items-center bg-black/40 flex-shrink-0"><h3 class="text-white font-bold text-lg"><i class="fas fa-camera mr-2"></i>Escanear codigo</h3><button onclick="cerrarEscanerVentas()" class="text-white/80 hover:text-white text-2xl leading-none"><i class="fas fa-times"></i></button></div><div class="flex-1 relative overflow-hidden"><div id="qr-reader-ventas" class="w-full h-full"></div><div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="w-72 h-48 border-4 border-white/40 rounded-2xl relative"><div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-[#1CA7EC] rounded-tl-2xl"></div><div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-[#1CA7EC] rounded-tr-2xl"></div><div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-[#1CA7EC] rounded-bl-2xl"></div><div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-[#1CA7EC] rounded-br-2xl"></div></div></div></div><div class="p-4 text-center bg-black/40 flex-shrink-0"><p class="text-white text-sm font-medium mb-1" id="escanerStatusVentas">Iniciando camara...</p><p class="text-white/60 text-xs">Apunta al codigo de barras o QR</p></div><div class="p-4 bg-black/40 flex-shrink-0"><button onclick="cerrarEscanerVentas()" class="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition">Cancelar</button></div></div>';
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+    document.getElementById('modalEscanerVentas').classList.remove('hidden'); _scannerAbiertoVentas = true;
+    setTimeout(function () {
+        if (typeof Html5Qrcode === 'undefined') { document.getElementById('escanerStatusVentas').textContent = 'Error: libreria no cargada'; return; }
+        if (!_scannerVentas) _scannerVentas = new Html5Qrcode('qr-reader-ventas');
+        var config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 };
+        _scannerVentas.start({ facingMode: 'environment' }, config, onCodigoDetectadoVentas, function () {}).then(function () { document.getElementById('escanerStatusVentas').textContent = 'Buscando codigo...'; }).catch(function (err) { document.getElementById('escanerStatusVentas').textContent = 'Error: ' + (err.message || err); });
+    }, 200);
+}
+function cerrarEscanerVentas() { if (_scannerVentas && _scannerVentas.isScanning) { _scannerVentas.stop().then(function () { _scannerVentas.clear(); }).catch(function () {}); } var modal = document.getElementById('modalEscanerVentas'); if (modal) modal.classList.add('hidden'); _scannerAbiertoVentas = false; }
+function onCodigoDetectadoVentas(codigo) { if (!_scannerAbiertoVentas) return; if (navigator.vibrate) navigator.vibrate(100); try { var audioCtx = new (window.AudioContext || window.webkitAudioContext)(); var osc = audioCtx.createOscillator(); var gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.frequency.value = 800; gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } catch (e) {} cerrarEscanerVentas(); procesarCodigoVentas(codigo); }
+function procesarCodigoVentas(codigo) {
+    var productos = document.querySelectorAll('.producto-item'); var encontrado = null; var codigoBuscado = normalizar(codigo);
+    for (var i = 0; i < productos.length; i++) { if (normalizar(productos[i].dataset.codigo) === codigoBuscado) { encontrado = productos[i]; break; } }
+    if (encontrado) { encontrado.click(); if (typeof Swal !== 'undefined') { Swal.fire({ icon: 'success', title: 'Agregado al carrito', text: codigo, timer: 1200, showConfirmButton: false, toast: true, position: 'top-end' }); } }
+    else { if (typeof Swal !== 'undefined') { Swal.fire({ icon: 'warning', title: 'Producto no encontrado', text: 'Codigo: ' + codigo, confirmButtonColor: '#1CA7EC' }); } else { alert('Producto no encontrado: ' + codigo); } }
+}
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && _scannerAbiertoVentas) cerrarEscanerVentas(); });
+document.addEventListener('DOMContentLoaded', function () { var elTasa = document.getElementById('tasaActual'); if (elTasa) { elTasa.textContent = TASA_BCV.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}); } renderCarrito(); });
+</script>
+{% endblock %}

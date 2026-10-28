@@ -1,0 +1,1798 @@
+﻿{% extends 'base.html' %}
+{% block title %}Inventario{% endblock %}
+{% block page_title %}Inventario{% endblock %}
+{% block page_subtitle %}{{ stats.total }} productos · Valor: ${{ "%.2f"|format(stats.valor_total) }}{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-2 flex-wrap">
+    <button onclick="abrirModalProducto()" class="bg-[#1CA7EC] hover:bg-[#1892d4] text-white px-4 py-2 rounded-lg text-sm font-medium transition" data-ripple>
+        <i class="fas fa-plus mr-1"></i> Nuevo Producto
+    </button>
+
+    <div class="relative" x-data="{ open: false }">
+        <button onclick="toggleMenuExcel(event)" class="bg-[#4ADEDE] hover:bg-[#0ea5a5] text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1">
+            <i class="fas fa-file-excel"></i>
+            <span>Excel</span>
+            <i class="fas fa-chevron-down text-xs ml-1"></i>
+        </button>
+        <div id="menuExcel" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 anim-hover-lift">
+            <a href="javascript:void(0)" onclick="descargarExcel()" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 text-slate-700 text-sm">
+                <i class="fas fa-file-download text-emerald-600 w-5"></i>
+                <div class="text-left">
+                    <p class="font-medium">Exportar inventario</p>
+                    <p class="text-[10px] text-slate-500">Descargar Excel con todo</p>
+                </div>
+            </a>
+            <button onclick="abrirModalImportar(); toggleMenuExcel();" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 text-slate-700 text-sm">
+                <i class="fas fa-file-upload text-blue-600 w-5"></i>
+                <div class="text-left">
+                    <p class="font-medium">Importar inventario</p>
+                    <p class="text-[10px] text-slate-500">Subir Excel y actualizar</p>
+                </div>
+            </button>
+            <div class="border-t border-slate-100 my-1"></div>
+            <a href="javascript:void(0)" onclick="descargarPlantilla()" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 text-slate-700 text-sm">
+                <i class="fas fa-file-alt text-amber-600 w-5"></i>
+                <div class="text-left">
+                    <p class="font-medium">Descargar plantilla</p>
+                    <p class="text-[10px] text-slate-500">Excel vacio con las columnas</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <p class="text-xs font-medium text-slate-500 uppercase">Total Productos</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1">{{ stats.total }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <p class="text-xs font-medium text-slate-500 uppercase">Unidades en Stock</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1">{{ stats.stock_total }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <p class="text-xs font-medium text-slate-500 uppercase">Valor Inventario</p>
+        <p class="text-2xl font-bold text-[#4ADEDE] mt-1">${{ "%.2f"|format(stats.valor_total) }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <p class="text-xs font-medium text-slate-500 uppercase">Bajo Stock</p>
+        <p class="text-2xl font-bold text-amber-600 mt-1">{{ stats.stock_bajo }}</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6 anim-hover-lift">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div class="relative">
+                <input type="text" name="search" id="buscadorInventario" placeholder="Buscar o escanear..." value="{{ search }}"
+                       class="w-full px-4 py-2 pr-11 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+                <button type="button" onclick="abrirEscaner('inventario')"
+                        title="Escanear codigo de barras"
+                        class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md bg-[#1CA7EC] hover:bg-[#1892d4] text-white transition" data-ripple>
+                    <i class="fas fa-camera text-xs"></i>
+                </button>
+            </div>
+        <select name="categoria" class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+            <option value="">Todas las categorías</option>
+            {% for c in categorias_db %}
+                <option value="{{ c }}" {% if c == categoria %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+        <select name="marca" class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+            <option value="">Todas las marcas</option>
+            {% for m in marcas_moto %}
+                <option value="{{ m }}" {% if m == marca %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+        <label class="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm cursor-pointer">
+            <input type="checkbox" name="stock_bajo" value="1" {% if stock_bajo == '1' %}checked{% endif %}>
+            Solo bajo stock
+        </label>
+        <div class="flex gap-2">
+            <button type="submit" class="flex-1 bg-[#1CA7EC] hover:bg-[#1892d4] text-white py-2 rounded-lg text-sm" data-ripple>
+                <i class="fas fa-search mr-1"></i> Filtrar
+            </button>
+            <a href="{{ url_for('user.inventario') }}" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden anim-hover-lift">
+    {% if productos %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Producto</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Código</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Categoría</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Marca</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Precio USD</th>
+                    <th class="text-center px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Stock</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100" data-anim-stagger>
+                {% for p in productos %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            {% if p.imagen_url %}
+                                <img src="{{ p.imagen_url }}" class="w-10 h-10 rounded-lg object-cover" alt="">
+                            {% else %}
+                                <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-slate-800">
+                                    {{ p.nombre }}
+                                    {% if not p.activo %}
+                                        <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-200 text-slate-600">
+                                            Inactivo
+                                        </span>
+                                    {% endif %}
+                                </p>
+                                {% if p.modelo %}<p class="text-xs text-slate-500">{{ p.modelo }}</p>{% endif %}
+                                
+                                {# VARIANTES #}
+                                {% set variantes_producto = p.variantes.all() %}
+                                {% if variantes_producto %}
+                                <div class="mt-2 flex flex-wrap gap-1 variantes-lista">
+                                    {% for v in variantes_producto %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium cursor-help
+                                        {% if v.stock_actual == 0 %}bg-red-100 text-red-700 border border-red-200
+                                        {% elif v.stock_actual <= v.stock_minimo %}bg-amber-100 text-amber-700 border border-amber-200
+                                        {% else %}bg-[#e6f7ff] text-[#1CA7EC] border border-[#b8e8fb]{% endif %}"
+                                        title="Variante: {{ v.nombre }}&#10;Codigo: {{ v.codigo or 'N/A' }}&#10;Stock: {{ v.stock_actual }} unidades&#10;Precio: ${{ '%.2f'|format(v.precio_venta_efectivo) }}">
+                                        <i class="fas fa-tag" style="font-size:9px;"></i>
+                                        <span>{{ v.nombre }}</span>
+                                        <span class="font-bold">({{ v.stock_actual }})</span>
+                                        <span class="opacity-75" style="font-size:10px;">${{ '%.2f'|format(v.precio_venta_efectivo) }}</span>
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-slate-600">{{ p.codigo }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ p.categoria or '-' }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ p.marca or '-' }}</td>
+                    <td class="px-4 py-3 text-right font-medium">${{ "%.2f"|format(p.precio_venta_usd or 0) }}</td>
+                    <td class="px-4 py-3 text-center">
+                        {% if p.stock_actual == 0 %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Agotado</span>
+                        {% elif p.stock_bajo %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">{{ p.stock_actual }}</span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-[#d4f7f7] text-[#0ea5a5]">{{ p.stock_actual }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <button onclick="abrirEditar({{ p.id }})" class="text-[#1CA7EC] hover:text-blue-800 p-1" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="abrirStock({{ p.id }}, '{{ p.nombre }}', {{ p.stock_actual }})" class="text-amber-600 hover:text-amber-800 p-1 ml-1" title="Ajustar stock">
+                            <i class="fas fa-sort-amount-up"></i>
+                        </button>
+                        {% if p.activo %}
+                            <button onclick="eliminar({{ p.id }}, '{{ p.nombre }}')" class="text-red-600 hover:text-red-800 p-1 ml-1" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        {% else %}
+                            <button onclick="reactivar({{ p.id }}, '{{ p.nombre }}')" class="text-[#4ADEDE] hover:text-emerald-800 p-1 ml-1" title="Reactivar">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-box-open text-slate-300 text-5xl mb-4"></i>
+        <p class="text-slate-500">No hay productos</p>
+        <button onclick="abrirModalProducto()" class="mt-4 bg-[#1CA7EC] text-white px-4 py-2 rounded-lg text-sm" data-ripple>
+            <i class="fas fa-plus mr-1"></i> Agregar el primero
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<div id="modalProducto" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+            <h3 id="tituloModal" class="font-bold text-lg">Nuevo Producto</h3>
+            <button onclick="cerrarModalProducto()" class="text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="formProducto" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Nombre *</label>
+                    <input type="text" name="nombre" id="f_nombre" required class="w-full px-4 py-2 border rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Código *</label>
+                    <div class="relative">
+                        <input type="text" name="codigo" id="f_codigo" required
+                               class="w-full px-4 py-2 pr-11 border rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+                        <button type="button" onclick="escanearParaCodigo()"
+                                title="Escanear codigo de barras"
+                                class="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-md bg-[#1CA7EC] hover:bg-[#1892d4] text-white transition" data-ripple>
+                            <i class="fas fa-camera text-sm"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Click en la camara para escanear
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Categoría</label>
+                    <select name="categoria" id="f_categoria" class="w-full px-4 py-2 border rounded-lg" onchange="alCambiarCategoria()">
+                        <option value="">Seleccionar...</option>
+                        {% for c in categorias_predefinidas %}
+                            <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Subcategoría</label>
+                    <select name="subcategoria" id="f_subcategoria" class="w-full px-4 py-2 border rounded-lg">
+                        <option value="">Seleccionar...</option>
+                    </select>
+                </div>
+
+                <!-- ✅ MARCA CON SELECT DINÁMICO + INPUT MANUAL -->
+                <div>
+                    <label class="block text-sm font-medium mb-1">Marca</label>
+                    <div class="flex gap-2">
+                        <select name="marca_select" id="f_marca" class="flex-1 px-4 py-2 border rounded-lg" onchange="alCambiarMarca()">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                        <button type="button" onclick="activarMarcaManual()"
+                                class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-sm"
+                                title="Escribir marca manualmente">
+                            <i class="fas fa-keyboard"></i>
+                        </button>
+                    </div>
+                    <input type="text" name="marca_manual" id="f_marca_manual"
+                           class="hidden w-full px-4 py-2 border rounded-lg mt-2"
+                           placeholder="Escribe la marca...">
+                    <input type="hidden" name="marca" id="f_marca_final">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Modelo</label>
+                    <input type="text" name="modelo" id="f_modelo" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+
+                <!-- ✅ CHECKBOX DE VARIANTES -->
+                <div class="col-span-2 bg-[#e6f7ff] border border-[#b8e8fb] rounded-lg p-4">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="tieneVariantes" name="tiene_variantes" value="1"
+                               class="mt-0.5 w-5 h-5 cursor-pointer" onchange="toggleVariantes()">
+                        <div class="flex-1">
+                            <p class="font-semibold text-slate-800">Este producto tiene variantes</p>
+                            <p class="text-xs text-slate-600 mt-1">
+                                Activa esto si el mismo producto tiene diferentes opciones:
+                                colores, tallas, modelos, presentaciones, etc.
+                            </p>
+                            <p class="text-xs text-[#1CA7EC] mt-1">
+                                <i class="fas fa-lightbulb mr-1"></i>
+                                Ejemplos: "Azul", "Talla M", "iPhone 12", "1 Galón", "500ml"
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- ✅ SECCION DE VARIANTES (oculta por defecto) -->
+                <div id="seccionVariantes" class="hidden col-span-2">
+                    <div class="border-2 border-[#7BD5F5] rounded-lg p-4 bg-[#e6f7ff]/30">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <h4 class="font-semibold text-slate-800">
+                                    <i class="fas fa-layer-group text-[#1CA7EC] mr-1"></i>
+                                    Variantes del producto
+                                </h4>
+                                <p class="text-xs text-slate-500">Agrega cada variante con su stock propio</p>
+                            </div>
+                            <button type="button" onclick="agregarVariante()"
+                                    class="bg-[#1CA7EC] hover:bg-[#1892d4] text-white px-3 py-1.5 rounded-lg text-sm font-medium" data-ripple>
+                                <i class="fas fa-plus mr-1"></i> Agregar variante
+                            </button>
+                        </div>
+                        
+                        <div id="listaVariantes" class="space-y-2">
+                            <!-- Las variantes se insertan aqui -->
+                        </div>
+                        
+                        <div id="variantesVacias" class="text-center py-6 text-slate-400 text-sm">
+                            <i class="fas fa-box-open text-2xl mb-2 block"></i>
+                            No hay variantes. Haz click en "Agregar variante" para empezar.
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Precio Costo USD
+                        <span class="text-xs text-slate-500">(lo que pagaste)</span>
+                    </label>
+                    <input type="number" step="0.01" name="precio_costo_usd" id="f_precio_costo_usd"
+                           value="0" class="w-full px-4 py-2 border rounded-lg"
+                           oninput="recalcularPrecioVenta()">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Margen de Ganancia %
+                        <span class="text-xs text-slate-500">(ej: 30)</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="number" step="0.01" name="margen_ganancia" id="f_margen_ganancia"
+                               value="0" min="0"
+                               class="flex-1 px-4 py-2 border rounded-lg"
+                               oninput="recalcularPrecioVenta()">
+                        <button type="button" onclick="aplicarMargenRapido(20)"
+                                class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs">20%</button>
+                        <button type="button" onclick="aplicarMargenRapido(30)"
+                                class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs">30%</button>
+                        <button type="button" onclick="aplicarMargenRapido(50)"
+                                class="px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs">50%</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Precio Venta USD *
+                        <span class="text-xs text-[#1CA7EC]" id="label-precio-calculado">(calculado)</span>
+                    </label>
+                    <input type="number" step="0.01" name="precio_venta_usd" id="f_precio_venta_usd"
+                           required class="w-full px-4 py-2 border rounded-lg bg-[#e6f7ff]"
+                           oninput="marcarPrecioManual()">
+                    <div class="text-xs text-slate-500 mt-1">
+                        Ganancia: <span id="label-ganancia" class="font-medium text-[#4ADEDE]">$0.00</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Stock Actual</label>
+                    <input type="number" name="stock_actual" id="f_stock_actual" value="0" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Stock Mínimo</label>
+                    <input type="number" name="stock_minimo" id="f_stock_minimo" value="5" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Imagen</label>
+                    <input type="file" name="imagen_producto" accept="image/*" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Descripción</label>
+                    <textarea name="descripcion" id="f_descripcion" rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t">
+                <button type="button" onclick="cerrarModalProducto()" class="px-4 py-2 border rounded-lg">Cancelar</button>
+                <button type="submit" class="px-6 py-2 bg-[#1CA7EC] hover:bg-[#1892d4] text-white rounded-lg" data-ripple>
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalStock" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md">
+        <div class="px-6 py-4 border-b">
+            <h3 class="font-bold">Ajustar Stock</h3>
+            <p class="text-sm text-slate-500"><span id="nombreProducto"></span> · Actual: <span id="stockActual" class="font-semibold"></span></p>
+        </div>
+        <form id="formStock" method="POST" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-sm font-medium mb-1">Tipo</label>
+                <select name="tipo_ajuste" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="entrada">Entrada (+)</option>
+                    <option value="salida">Salida (-)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Cantidad</label>
+                <input type="number" name="cantidad" required min="1" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div class="flex justify-end gap-2 pt-4 border-t">
+                <button type="button" onclick="cerrarModalStock()" class="px-4 py-2 border rounded-lg">Cancelar</button>
+                <button type="submit" class="px-6 py-2 bg-[#1CA7EC] text-white rounded-lg" data-ripple>Aplicar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="formEliminar" method="POST" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ============================================================
+// HELPERS: Toast con SweetAlert2
+// ============================================================
+function toastError(msg) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#dc2626' });
+    } else { console.error(msg); }
+}
+function toastWarning(msg) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: 'warning', title: 'Atencion', text: msg, confirmButtonColor: '#f59e0b' });
+    } else { console.warn(msg); }
+}
+function toastSuccess(msg) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: 'success', title: msg, timer: 2000, showConfirmButton: false, timerProgressBar: true });
+    } else { console.log(msg); }
+}
+
+const CATEGORIAS_MARCAS = {
+    'Repuestos Moto': ['Bera', 'Empire Keeway', 'Hero', 'Honda', 'Kawasaki', 'Suzuki', 'TVS', 'Yamaha', 'AKT', 'Bajaj', 'Motocar', 'Otra Marca'],
+    'Electrónica': ['Samsung', 'LG', 'Sony', 'Apple', 'Xiaomi', 'Huawei', 'Panasonic', 'Philips', 'HP', 'Dell', 'Lenovo', 'Asus', 'Acer', 'JBL', 'Logitech', 'Otra Marca'],
+    'Hogar': ['Oster', 'Hamilton Beach', 'Black+Decker', 'Philips', 'Mabe', 'Whirlpool', 'LG', 'Samsung', 'Imusa', 'Otra Marca'],
+    'Ropa': ['Nike', 'Adidas', 'Puma', 'Reebok', 'Under Armour', 'Levi\'s', 'Zara', 'H&M', 'Tommy Hilfiger', 'Otra Marca'],
+    'Herramientas': ['Stanley', 'DeWalt', 'Bosch', 'Makita', 'Black+Decker', 'Truper', 'Klein Tools', 'Milwaukee', 'Craftsman', 'Einhell', 'Otra Marca'],
+    'Automotriz': ['Toyota', 'Chevrolet', 'Ford', 'Hyundai', 'Kia', 'Honda', 'Nissan', 'Mazda', 'Volkswagen', 'Fiat', 'Renault', 'Mitsubishi', 'Jeep', 'Otra Marca'],
+    'Oficina': ['Faber-Castell', 'Bic', 'Pilot', 'Paper Mate', 'Maped', 'Artesco', 'HP', 'Epson', 'Canon', 'Brother', 'Otra Marca'],
+    'Alimentos': ['Nestlé', 'Polar', 'Kraft', 'Heinz', 'Kellogg\'s', 'Quaker', 'Del Monte', 'Mary', 'Plumrose', 'Parmalat', 'Danone', 'Otra Marca'],
+    'Bebidas': ['Coca-Cola', 'Pepsi', 'Polar', 'Sprite', 'Fanta', 'Red Bull', 'Monster', 'Gatorade', 'Malta', 'Brahma', 'Zulia', 'Regional', 'Otra Marca'],
+    'Juguetes': ['Lego', 'Hasbro', 'Mattel', 'Fisher-Price', 'Playmobil', 'Nerf', 'Barbie', 'Hot Wheels', 'Funko', 'Otra Marca'],
+    'Deportes': ['Nike', 'Adidas', 'Puma', 'Under Armour', 'Wilson', 'Spalding', 'Coleman', 'Everlast', 'Speedo', 'Reebok', 'Otra Marca'],
+    'Salud y Belleza': ['Nivea', 'L\'Oreal', 'Dove', 'Pantene', 'Head & Shoulders', 'Colgate', 'Oral-B', 'Gillette', 'Vaseline', 'Eucerin', 'Neutrogena', 'Otra Marca'],
+    'Libros': ['Planeta', 'Penguin Random House', 'Santillana', 'Anaya', 'Alfaguara', 'Norma', 'Otra Marca'],
+    'Construcción': ['Truper', 'Stanley', 'DeWalt', 'Bosch', 'Makita', 'Pretul', 'Sika', 'Cemex', 'Holcim', 'Pegatex', 'Otra Marca'],
+    'Farmacia': ['Bayer', 'Pfizer', 'Roche', 'Novartis', 'Sanofi', 'Genomma Lab', 'La Santé', 'MK', 'Beacon', 'Genfar', 'Otra Marca'],
+    'Otros': []
+};
+
+function alCambiarCategoria() {
+    var cat = document.getElementById('f_categoria').value;
+    var selMarca = document.getElementById('f_marca');
+    var marcas = CATEGORIAS_MARCAS[cat] || [];
+    
+    // Limpiar y poblar select de marcas
+    selMarca.innerHTML = '<option value="">Seleccionar...</option>';
+    marcas.forEach(function(m) {
+        var opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        selMarca.appendChild(opt);
+    });
+    
+    // Cargar subcategorías desde el servidor
+    fetch('/api/subcategorias?categoria=' + encodeURIComponent(cat))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var selSub = document.getElementById('f_subcategoria');
+            selSub.innerHTML = '<option value="">Seleccionar...</option>';
+            if (data.success && data.subcategorias) {
+                data.subcategorias.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    selSub.appendChild(opt);
+                });
+            }
+        })
+        .catch(function() {});
+}
+
+function alCambiarMarca() {
+    var sel = document.getElementById('f_marca');
+    var manual = document.getElementById('f_marca_manual');
+    var final = document.getElementById('f_marca_final');
+    
+    if (sel.value === 'Otra Marca') {
+        manual.classList.remove('hidden');
+        manual.focus();
+        final.value = '';
+    } else {
+        manual.classList.add('hidden');
+        final.value = sel.value;
+    }
+}
+
+function activarMarcaManual() {
+    var sel = document.getElementById('f_marca');
+    var manual = document.getElementById('f_marca_manual');
+    sel.value = 'Otra Marca';
+    manual.classList.remove('hidden');
+    manual.focus();
+}
+
+// Sincronizar marca final antes de enviar
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('formProducto');
+    if (form) {
+        form.addEventListener('submit', function() {
+            var sel = document.getElementById('f_marca');
+            var manual = document.getElementById('f_marca_manual');
+            var final = document.getElementById('f_marca_final');
+            
+            if (sel.value === 'Otra Marca' && manual.value.trim()) {
+                final.value = manual.value.trim();
+            } else {
+                final.value = sel.value;
+            }
+        });
+    }
+});
+
+
+// ============================================================
+// ✅ CÁLCULO AUTOMÁTICO DE PRECIO DE VENTA POR MARGEN
+// ============================================================
+
+var _precioManual = false;  // Bandera: el usuario editó el precio manualmente
+
+function recalcularPrecioVenta() {
+    if (_precioManual) return;  // Si editó manual, no recalcular
+    
+    var costo = parseFloat(document.getElementById('f_precio_costo_usd').value) || 0;
+    var margen = parseFloat(document.getElementById('f_margen_ganancia').value) || 0;
+    
+    var precioVenta = costo * (1 + margen / 100);
+    document.getElementById('f_precio_venta_usd').value = precioVenta.toFixed(2);
+    
+    actualizarGanancia();
+}
+
+function actualizarGanancia() {
+    var costo = parseFloat(document.getElementById('f_precio_costo_usd').value) || 0;
+    var venta = parseFloat(document.getElementById('f_precio_venta_usd').value) || 0;
+    var ganancia = venta - costo;
+    
+    var el = document.getElementById('label-ganancia');
+    if (el) {
+        el.textContent = '$' + ganancia.toFixed(2);
+        el.className = ganancia >= 0 ? 'font-medium text-[#4ADEDE]' : 'font-medium text-red-600';
+    }
+    
+    // Actualizar % de margen real si el precio se puso manual
+    if (_precioManual && costo > 0) {
+        var margenReal = ((venta - costo) / costo * 100);
+        document.getElementById('f_margen_ganancia').value = margenReal.toFixed(2);
+    }
+}
+
+function marcarPrecioManual() {
+    _precioManual = true;
+    document.getElementById('label-precio-calculado').textContent = '(manual)';
+    document.getElementById('label-precio-calculado').className = 'text-xs text-amber-600';
+    actualizarGanancia();
+}
+
+function aplicarMargenRapido(pct) {
+    document.getElementById('f_margen_ganancia').value = pct;
+    _precioManual = false;
+    document.getElementById('label-precio-calculado').textContent = '(calculado)';
+    document.getElementById('label-precio-calculado').className = 'text-xs text-[#1CA7EC]';
+    recalcularPrecioVenta();
+}
+
+// Cuando se abre el modal para nuevo producto, resetear bandera
+
+// ============================================================
+// VARIANTES DE PRODUCTOS
+// ============================================================
+var contadorVariantes = 0;
+
+function toggleVariantes() {
+    var check = document.getElementById('tieneVariantes');
+    var seccion = document.getElementById('seccionVariantes');
+    var stockInput = document.getElementById('f_stock_actual');
+    var stockLabel = stockInput ? stockInput.closest('div') : null;
+    
+    if (check.checked) {
+        seccion.classList.remove('hidden');
+        if (stockInput) {
+            stockInput.disabled = true;
+            stockInput.classList.add('bg-slate-100', 'text-slate-400');
+            stockInput.value = 0;
+        }
+        // Si no hay ninguna variante, agregar una vacia
+        if (document.querySelectorAll('.variante-row').length === 0) {
+            agregarVariante();
+        }
+    } else {
+        seccion.classList.add('hidden');
+        if (stockInput) {
+            stockInput.disabled = false;
+            stockInput.classList.remove('bg-slate-100', 'text-slate-400');
+        }
+    }
+}
+
+function agregarVariante(nombre, codigo, stock, precio_venta, precio_costo) {
+    nombre = nombre || '';
+    codigo = codigo || '';
+    stock = stock || 0;
+    precio_venta = precio_venta || '';
+    precio_costo = precio_costo || '';
+    
+    contadorVariantes++;
+    var idx = contadorVariantes;
+    
+    var html = '<div class="variante-row bg-white rounded-lg p-3 border border-[#b8e8fb]" data-idx="' + idx + '">' +
+        '<div class="grid grid-cols-12 gap-2 items-center">' +
+            // Nombre
+            '<input type="text" name="variantes[' + idx + '][nombre]" ' +
+                'value="' + escapeAttr(nombre) + '" ' +
+                'placeholder="Variante (ej: Azul)" required ' +
+                'class="col-span-4 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">' +
+            // Codigo
+            '<input type="text" name="variantes[' + idx + '][codigo]" ' +
+                'value="' + escapeAttr(codigo) + '" ' +
+                'placeholder="Codigo" ' +
+                'class="col-span-2 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">' +
+            // Stock
+            '<input type="number" name="variantes[' + idx + '][stock_actual]" ' +
+                'value="' + stock + '" min="0" ' +
+                'placeholder="Stock" ' +
+                'class="col-span-2 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">' +
+            // Precio venta
+            '<div class="col-span-3">' +
+                '<input type="number" step="0.01" name="variantes[' + idx + '][precio_venta_usd]" ' +
+                    'value="' + precio_venta + '" min="0" ' +
+                    'placeholder="Precio venta" ' +
+                    'class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none"' +
+                    'title="Si lo dejas vacio, hereda el precio del producto padre">' +
+            '</div>' +
+            // Boton eliminar
+            '<button type="button" onclick="eliminarVariante(this)" ' +
+                    'class="col-span-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded p-2 flex items-center justify-center" ' +
+                    'title="Eliminar variante">' +
+                '<i class="fas fa-trash"></i>' +
+            '</button>' +
+        '</div>' +
+        '<div class="grid grid-cols-12 gap-2 items-center mt-2">' +
+            '<div class="col-span-4 text-xs text-slate-500 pl-1">' +
+                '<i class="fas fa-info-circle mr-1"></i>Precio venta vacio = usa precio del producto padre' +
+            '</div>' +
+            // Precio costo (opcional)
+            '<div class="col-span-4">' +
+                '<input type="number" step="0.01" name="variantes[' + idx + '][precio_costo_usd]" ' +
+                    'value="' + precio_costo + '" min="0" ' +
+                    'placeholder="Precio costo (opcional)" ' +
+                    'class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1CA7EC] outline-none"' +
+                    'title="Precio costo especifico de esta variante">' +
+            '</div>' +
+        '</div>' +
+    '</div>';
+    
+    document.getElementById('listaVariantes').insertAdjacentHTML('beforeend', html);
+    actualizarVisibilidadVariantesVacias();
+}
+
+function eliminarVariante(btn) {
+    if (!confirm('¿Eliminar esta variante?')) return;
+    btn.closest('.variante-row').remove();
+    actualizarVisibilidadVariantesVacias();
+}
+
+function actualizarVisibilidadVariantesVacias() {
+    var rows = document.querySelectorAll('.variante-row');
+    var vacias = document.getElementById('variantesVacias');
+    if (vacias) {
+        vacias.style.display = rows.length > 0 ? 'none' : 'block';
+    }
+}
+
+function escapeAttr(str) {
+    if (!str) return '';
+    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function cargarVariantes(variantes) {
+    var lista = document.getElementById('listaVariantes');
+    lista.innerHTML = '';
+    contadorVariantes = 0;
+    
+    if (!variantes || variantes.length === 0) {
+        actualizarVisibilidadVariantesVacias();
+        return;
+    }
+    
+    variantes.forEach(function(v) {
+        agregarVariante(v.nombre, v.codigo, v.stock_actual, v.precio_venta_usd || '', v.precio_costo_usd || '');
+    });
+}
+
+function limpiarVariantes() {
+    document.getElementById('listaVariantes').innerHTML = '';
+    contadorVariantes = 0;
+    document.getElementById('tieneVariantes').checked = false;
+    document.getElementById('seccionVariantes').classList.add('hidden');
+    var stockInput = document.getElementById('f_stock_actual');
+    if (stockInput) {
+        stockInput.disabled = false;
+        stockInput.classList.remove('bg-slate-100', 'text-slate-400');
+    }
+    actualizarVisibilidadVariantesVacias();
+}
+
+// ============================================================
+
+function abrirModalProducto() {
+    document.getElementById('tituloModal').textContent = 'Nuevo Producto';
+    document.getElementById('formProducto').action = "{{ url_for('user.crear_producto') }}";
+    document.getElementById('formProducto').reset();
+    _precioManual = false;
+    document.getElementById('label-precio-calculado').textContent = '(calculado)';
+    document.getElementById('label-precio-calculado').className = 'text-xs text-[#1CA7EC]';
+    document.getElementById('label-ganancia').textContent = '$0.00';
+    document.getElementById('label-ganancia').className = 'font-medium text-[#4ADEDE]';
+    document.getElementById('f_marca').innerHTML = '<option value="">Seleccionar...</option>';
+    document.getElementById('f_subcategoria').innerHTML = '<option value="">Seleccionar...</option>';
+    document.getElementById('f_marca_manual').classList.add('hidden');
+    
+    // ✅ Limpiar variantes
+    limpiarVariantes();
+    
+    document.getElementById('modalProducto').classList.remove('hidden');
+}
+
+function abrirEditar(id) {
+    fetch('/user/producto/' + id + '/datos')
+        .then(function(r) { return r.json(); })
+        .then(function(p) {
+            document.getElementById('tituloModal').textContent = 'Editar Producto';
+            document.getElementById('formProducto').action = '/user/producto/' + id + '/editar';
+            document.getElementById('f_nombre').value = p.nombre || '';
+            document.getElementById('f_codigo').value = p.codigo || '';
+            document.getElementById('f_modelo').value = p.modelo || '';
+            document.getElementById('f_precio_costo_usd').value = p.precio_costo_usd || 0;
+            document.getElementById('f_precio_venta_usd').value = p.precio_venta_usd || 0;
+            _precioManual = false;
+            document.getElementById('label-precio-calculado').textContent = '(calculado)';
+            document.getElementById('label-precio-calculado').className = 'text-xs text-[#1CA7EC]';
+            setTimeout(actualizarGanancia, 100);
+            document.getElementById('f_stock_actual').value = p.stock_actual || 0;
+            document.getElementById('f_stock_minimo').value = p.stock_minimo || 5;
+            document.getElementById('f_descripcion').value = p.descripcion || '';
+            
+            // Categoría
+            if (p.categoria) {
+                document.getElementById('f_categoria').value = p.categoria;
+                alCambiarCategoria();
+                
+                // Marca (con delay para que se pueble el select)
+                setTimeout(function() {
+                    var selMarca = document.getElementById('f_marca');
+                    var encontrada = false;
+                    for (var i = 0; i < selMarca.options.length; i++) {
+                        if (selMarca.options[i].value === p.marca) {
+                            selMarca.value = p.marca;
+                            encontrada = true;
+                            break;
+                        }
+                    }
+                    if (!encontrada && p.marca) {
+                        // Marca no está en la lista → modo manual
+                        selMarca.value = 'Otra Marca';
+                        document.getElementById('f_marca_manual').value = p.marca;
+                        document.getElementById('f_marca_manual').classList.remove('hidden');
+                    }
+                    document.getElementById('f_marca_final').value = p.marca || '';
+                }, 200);
+            }
+            
+            // ✅ Cargar variantes
+            if (p.variantes && p.variantes.length > 0) {
+                document.getElementById('tieneVariantes').checked = true;
+                document.getElementById('seccionVariantes').classList.remove('hidden');
+                document.getElementById('f_stock_actual').disabled = true;
+                document.getElementById('f_stock_actual').classList.add('bg-slate-100', 'text-slate-400');
+                cargarVariantes(p.variantes);
+            } else {
+                limpiarVariantes();
+            }
+            
+            document.getElementById('modalProducto').classList.remove('hidden');
+        })
+        .catch(function(e) { toastError('Error al cargar producto: ' + e); });
+}
+
+function cerrarModalProducto() {
+    document.getElementById('modalProducto').classList.add('hidden');
+}
+
+function abrirStock(id, nombre, stockActual) {
+    document.getElementById('nombreProducto').textContent = nombre;
+    document.getElementById('stockActual').textContent = stockActual;
+    document.getElementById('formStock').action = '/user/producto/' + id + '/ajustar-stock';
+    document.getElementById('modalStock').classList.remove('hidden');
+}
+
+function cerrarModalStock() {
+    document.getElementById('modalStock').classList.add('hidden');
+}
+
+function eliminar(id, nombre) {
+    if (confirm('¿Eliminar "' + nombre + '"?\n\nSi tiene ventas asociadas, se desactivara en lugar de eliminarse.')) {
+        var form = document.getElementById('formEliminar');
+        form.action = '/user/producto/' + id + '/eliminar';
+        form.submit();
+    }
+}
+
+function reactivar(id, nombre) {
+    if (confirm('¿Reactivar el producto "' + nombre + '"?')) {
+        var form = document.getElementById('formEliminar');
+        form.action = '/user/producto/' + id + '/reactivar';
+        form.submit();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalProducto();
+        cerrarModalStock();
+    }
+});
+</script>
+
+<!-- ============================================================
+     MODAL: Importar inventario desde Excel
+     ============================================================ -->
+<div id="modalImportar" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl max-h-[95vh] overflow-hidden flex flex-col">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] flex justify-between items-center flex-shrink-0">
+            <div>
+                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                    <i class="fas fa-file-upload"></i>
+                    Importar inventario
+                </h3>
+                <p class="text-xs text-white/70 mt-0.5">Sube un archivo Excel para actualizar tu inventario</p>
+            </div>
+            <button type="button" onclick="cerrarModalImportar()" class="text-white/70 hover:text-white">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto flex-1">
+            <form id="formImportar" method="POST" action="{{ url_for('user.importar_excel') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Modo -->
+                <div class="mb-5">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        Modo de importacion
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="modo" value="actualizar" checked class="peer sr-only">
+                            <div class="p-3 border-2 border-slate-200 rounded-xl peer-checked:border-[#1CA7EC] peer-checked:bg-[#e6f7ff] transition">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i class="fas fa-sync-alt text-[#1CA7EC]"></i>
+                                    <p class="font-semibold text-sm text-slate-800">Actualizar</p>
+                                </div>
+                                <p class="text-xs text-slate-500">
+                                    Agrega nuevos y <strong>actualiza</strong> los que ya existen (por codigo)
+                                </p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="modo" value="agregar" class="peer sr-only">
+                            <div class="p-3 border-2 border-slate-200 rounded-xl peer-checked:border-[#1CA7EC] peer-checked:bg-[#e6f7ff] transition">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i class="fas fa-plus text-[#1CA7EC]"></i>
+                                    <p class="font-semibold text-sm text-slate-800">Solo agregar</p>
+                                </div>
+                                <p class="text-xs text-slate-500">
+                                    Solo agrega nuevos. Los existentes se <strong>omiten</strong>.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Drop zone -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        Archivo Excel
+                    </label>
+                    <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-[#1CA7EC] hover:bg-slate-50 transition cursor-pointer"
+                         onclick="document.getElementById('inputExcel').click()">
+                        <input type="file" id="inputExcel" name="archivo_excel" accept=".xlsx,.xls" class="hidden" onchange="onFileSelected(this)">
+                        <div id="dropZoneEmpty">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-slate-300 mb-3"></i>
+                            <p class="text-sm font-medium text-slate-700 mb-1">
+                                Arrastra tu archivo aqui o <span class="text-[#1CA7EC]">haz click para buscar</span>
+                            </p>
+                            <p class="text-xs text-slate-500">
+                                Formatos: .xlsx, .xls · Max 10 MB
+                            </p>
+                        </div>
+                        <div id="dropZoneFile" class="hidden">
+                            <i class="fas fa-file-excel text-4xl text-emerald-500 mb-3"></i>
+                            <p class="text-sm font-medium text-slate-800" id="nombreArchivo"></p>
+                            <p class="text-xs text-slate-500 mt-1" id="tamanoArchivo"></p>
+                            <button type="button" onclick="event.stopPropagation(); limpiarArchivo();" class="mt-3 text-xs text-red-600 hover:text-red-700 font-medium">
+                                <i class="fas fa-times mr-1"></i>Quitar archivo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-xs text-blue-800 font-medium mb-2 flex items-center gap-1">
+                        <i class="fas fa-info-circle"></i>
+                        Antes de importar
+                    </p>
+                    <ul class="text-xs text-blue-700 space-y-1 ml-5 list-disc">
+                        <li>El archivo debe tener la columna <code class="bg-blue-100 px-1 rounded">CODIGO</code> o <code class="bg-blue-100 px-1 rounded">NOMBRE</code></li>
+                        <li>Los productos con el mismo codigo se <strong>actualizan</strong> (en modo Actualizar)</li>
+                        <li>Puedes descargar la <a href="{{ url_for('user.plantilla_excel') }}" class="underline font-medium">plantilla de ejemplo</a></li>
+                        <li>Tambien puedes exportar tu inventario actual para ver el formato</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2 flex-shrink-0">
+            <button type="button" onclick="cerrarModalImportar()" class="px-4 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 text-sm font-medium">
+                Cancelar
+            </button>
+            <button type="button" onclick="enviarImportar()" id="btnImportar"
+                    class="px-6 py-2.5 bg-gradient-to-r from-[#1CA7EC] to-[#787FF6] hover:opacity-95 text-white rounded-xl text-sm font-semibold transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                <i class="fas fa-upload"></i>
+                Importar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay de progreso -->
+<div id="overlayImportando" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-sm">
+        <i class="fas fa-spinner fa-spin text-4xl text-[#1CA7EC] mb-4"></i>
+        <p class="text-slate-800 font-semibold mb-1">Importando productos...</p>
+        <p class="text-xs text-slate-500">Esto puede tomar unos segundos</p>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// MENU EXCEL
+// ============================================================
+function toggleMenuExcel(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('menuExcel');
+    if (menu) menu.classList.toggle('hidden');
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuExcel');
+    if (menu && !menu.classList.contains('hidden')) {
+        if (!e.target.closest('#menuExcel') && !e.target.closest('[onclick*="toggleMenuExcel"]')) {
+            menu.classList.add('hidden');
+        }
+    }
+});
+
+// ============================================================
+// MODAL IMPORTAR
+// ============================================================
+function abrirModalImportar() {
+    document.getElementById('modalImportar').classList.remove('hidden');
+    limpiarArchivo();
+}
+
+function cerrarModalImportar() {
+    document.getElementById('modalImportar').classList.add('hidden');
+    limpiarArchivo();
+}
+
+function limpiarArchivo() {
+    const input = document.getElementById('inputExcel');
+    if (input) input.value = '';
+    document.getElementById('dropZoneEmpty').classList.remove('hidden');
+    document.getElementById('dropZoneFile').classList.add('hidden');
+    document.getElementById('btnImportar').disabled = true;
+}
+
+function onFileSelected(input) {
+    if (input.files && input.files[0]) {
+        mostrarArchivo(input.files[0]);
+    }
+}
+
+function mostrarArchivo(file) {
+    document.getElementById('dropZoneEmpty').classList.add('hidden');
+    document.getElementById('dropZoneFile').classList.remove('hidden');
+    document.getElementById('nombreArchivo').textContent = file.name;
+    document.getElementById('tamanoArchivo').textContent = (file.size / 1024).toFixed(1) + ' KB';
+    document.getElementById('btnImportar').disabled = false;
+}
+
+function enviarImportar() {
+    const input = document.getElementById('inputExcel');
+    if (!input.files || !input.files[0]) {
+        Swal.fire({ icon: 'warning', title: 'Falta el archivo', text: 'Selecciona un archivo Excel primero' });
+        return;
+    }
+
+    document.getElementById('overlayImportando').classList.remove('hidden');
+    document.getElementById('formImportar').submit();
+}
+
+// Drag & drop para importar
+const dzImportar = document.getElementById('dropZone');
+if (dzImportar) {
+    ['dragenter', 'dragover'].forEach(function(ev) {
+        dzImportar.addEventListener(ev, function(e) {
+            e.preventDefault();
+            dzImportar.classList.add('border-[#1CA7EC]', 'bg-[#e6f7ff]');
+        });
+    });
+    ['dragleave', 'drop'].forEach(function(ev) {
+        dzImportar.addEventListener(ev, function(e) {
+            e.preventDefault();
+            dzImportar.classList.remove('border-[#1CA7EC]', 'bg-[#e6f7ff]');
+        });
+    });
+    dzImportar.addEventListener('drop', function(e) {
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (!file.name.toLowerCase().match(/\.(xlsx|xls)$/)) {
+                Swal.fire({ icon: 'error', title: 'Formato no valido', text: 'Solo se permiten archivos .xlsx o .xls' });
+                return;
+            }
+            const input = document.getElementById('inputExcel');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            mostrarArchivo(file);
+        }
+    });
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalImportar();
+    }
+});
+</script>
+
+
+<!-- ============================================================
+     MODAL: Importar inventario desde Excel
+     ============================================================ -->
+<div id="modalImportar" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl max-h-[95vh] overflow-hidden flex flex-col">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] flex justify-between items-center flex-shrink-0">
+            <div>
+                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                    <i class="fas fa-file-upload"></i>
+                    Importar inventario
+                </h3>
+                <p class="text-xs text-white/70 mt-0.5">Sube un archivo Excel para actualizar tu inventario</p>
+            </div>
+            <button type="button" onclick="cerrarModalImportar()" class="text-white/70 hover:text-white">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto flex-1">
+            <form id="formImportar" method="POST" action="{{ url_for('user.importar_excel') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Modo -->
+                <div class="mb-5">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        Modo de importacion
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="modo" value="actualizar" checked class="peer sr-only">
+                            <div class="p-3 border-2 border-slate-200 rounded-xl peer-checked:border-[#1CA7EC] peer-checked:bg-[#e6f7ff] transition">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i class="fas fa-sync-alt text-[#1CA7EC]"></i>
+                                    <p class="font-semibold text-sm text-slate-800">Actualizar</p>
+                                </div>
+                                <p class="text-xs text-slate-500">
+                                    Agrega nuevos y <strong>actualiza</strong> los que ya existen (por codigo)
+                                </p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="modo" value="agregar" class="peer sr-only">
+                            <div class="p-3 border-2 border-slate-200 rounded-xl peer-checked:border-[#1CA7EC] peer-checked:bg-[#e6f7ff] transition">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <i class="fas fa-plus text-[#1CA7EC]"></i>
+                                    <p class="font-semibold text-sm text-slate-800">Solo agregar</p>
+                                </div>
+                                <p class="text-xs text-slate-500">
+                                    Solo agrega nuevos. Los existentes se <strong>omiten</strong>.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Drop zone -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        Archivo Excel
+                    </label>
+                    <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-[#1CA7EC] hover:bg-slate-50 transition cursor-pointer"
+                         onclick="document.getElementById('inputExcel').click()">
+                        <input type="file" id="inputExcel" name="archivo_excel" accept=".xlsx,.xls" class="hidden" onchange="onFileSelected(this)">
+                        <div id="dropZoneEmpty">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-slate-300 mb-3"></i>
+                            <p class="text-sm font-medium text-slate-700 mb-1">
+                                Arrastra tu archivo aqui o <span class="text-[#1CA7EC]">haz click para buscar</span>
+                            </p>
+                            <p class="text-xs text-slate-500">
+                                Formatos: .xlsx, .xls · Max 10 MB
+                            </p>
+                        </div>
+                        <div id="dropZoneFile" class="hidden">
+                            <i class="fas fa-file-excel text-4xl text-emerald-500 mb-3"></i>
+                            <p class="text-sm font-medium text-slate-800" id="nombreArchivo"></p>
+                            <p class="text-xs text-slate-500 mt-1" id="tamanoArchivo"></p>
+                            <button type="button" onclick="event.stopPropagation(); limpiarArchivo();" class="mt-3 text-xs text-red-600 hover:text-red-700 font-medium">
+                                <i class="fas fa-times mr-1"></i>Quitar archivo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="mt-5 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-xs text-blue-800 font-medium mb-2 flex items-center gap-1">
+                        <i class="fas fa-info-circle"></i>
+                        Antes de importar
+                    </p>
+                    <ul class="text-xs text-blue-700 space-y-1 ml-5 list-disc">
+                        <li>El archivo debe tener la columna <code class="bg-blue-100 px-1 rounded">CODIGO</code> o <code class="bg-blue-100 px-1 rounded">NOMBRE</code></li>
+                        <li>Los productos con el mismo codigo se <strong>actualizan</strong> (en modo Actualizar)</li>
+                        <li>Puedes descargar la <a href="{{ url_for('user.plantilla_excel') }}" class="underline font-medium">plantilla de ejemplo</a></li>
+                        <li>Tambien puedes exportar tu inventario actual para ver el formato</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2 flex-shrink-0">
+            <button type="button" onclick="cerrarModalImportar()" class="px-4 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 text-sm font-medium">
+                Cancelar
+            </button>
+            <button type="button" onclick="enviarImportar()" id="btnImportar"
+                    class="px-6 py-2.5 bg-gradient-to-r from-[#1CA7EC] to-[#787FF6] hover:opacity-95 text-white rounded-xl text-sm font-semibold transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                <i class="fas fa-upload"></i>
+                Importar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay de progreso -->
+<div id="overlayImportando" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl max-w-sm">
+        <i class="fas fa-spinner fa-spin text-4xl text-[#1CA7EC] mb-4"></i>
+        <p class="text-slate-800 font-semibold mb-1">Importando productos...</p>
+        <p class="text-xs text-slate-500">Esto puede tomar unos segundos</p>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// MENU EXCEL
+// ============================================================
+function toggleMenuExcel(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('menuExcel');
+    if (menu) menu.classList.toggle('hidden');
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuExcel');
+    if (menu && !menu.classList.contains('hidden')) {
+        if (!e.target.closest('#menuExcel') && !e.target.closest('[onclick*="toggleMenuExcel"]')) {
+            menu.classList.add('hidden');
+        }
+    }
+});
+
+// ============================================================
+// MODAL IMPORTAR
+// ============================================================
+function abrirModalImportar() {
+    document.getElementById('modalImportar').classList.remove('hidden');
+    limpiarArchivo();
+}
+
+function cerrarModalImportar() {
+    document.getElementById('modalImportar').classList.add('hidden');
+    limpiarArchivo();
+}
+
+function limpiarArchivo() {
+    const input = document.getElementById('inputExcel');
+    if (input) input.value = '';
+    document.getElementById('dropZoneEmpty').classList.remove('hidden');
+    document.getElementById('dropZoneFile').classList.add('hidden');
+    document.getElementById('btnImportar').disabled = true;
+}
+
+function onFileSelected(input) {
+    if (input.files && input.files[0]) {
+        mostrarArchivo(input.files[0]);
+    }
+}
+
+function mostrarArchivo(file) {
+    document.getElementById('dropZoneEmpty').classList.add('hidden');
+    document.getElementById('dropZoneFile').classList.remove('hidden');
+    document.getElementById('nombreArchivo').textContent = file.name;
+    document.getElementById('tamanoArchivo').textContent = (file.size / 1024).toFixed(1) + ' KB';
+    document.getElementById('btnImportar').disabled = false;
+}
+
+function enviarImportar() {
+    const input = document.getElementById('inputExcel');
+    if (!input.files || !input.files[0]) {
+        Swal.fire({ icon: 'warning', title: 'Falta el archivo', text: 'Selecciona un archivo Excel primero' });
+        return;
+    }
+
+    document.getElementById('overlayImportando').classList.remove('hidden');
+    document.getElementById('formImportar').submit();
+}
+
+// Drag & drop
+const dz = document.getElementById('dropZone');
+if (dz) {
+    ['dragenter', 'dragover'].forEach(function(ev) {
+        dz.addEventListener(ev, function(e) {
+            e.preventDefault();
+            dz.classList.add('border-[#1CA7EC]', 'bg-[#e6f7ff]');
+        });
+    });
+    ['dragleave', 'drop'].forEach(function(ev) {
+        dz.addEventListener(ev, function(e) {
+            e.preventDefault();
+            dz.classList.remove('border-[#1CA7EC]', 'bg-[#e6f7ff]');
+        });
+    });
+    dz.addEventListener('drop', function(e) {
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (!file.name.toLowerCase().match(/\.(xlsx|xls)$/)) {
+                Swal.fire({ icon: 'error', title: 'Formato no valido', text: 'Solo se permiten archivos .xlsx o .xls' });
+                return;
+            }
+            const input = document.getElementById('inputExcel');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            mostrarArchivo(file);
+        }
+    });
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalImportar();
+    }
+});
+
+// ============================================================
+// DESCARGAS EN MODO ESCRITORIO (pywebview)
+// ============================================================
+async function descargarExcel() {
+    var modo = '{{ "escritorio" if modo_escritorio else "web" }}';
+
+    if (modo === 'escritorio' && window.pywebview && window.pywebview.api) {
+        // Modo desktop: pedir token y descargar via API
+        Swal.fire({
+            title: 'Generando Excel...',
+            html: '<i class="fas fa-file-excel fa-2x text-emerald-500"></i>',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: function() { Swal.showLoading(); }
+        });
+
+        try {
+            // 1. Pedir token
+            var r = await fetch('/user/inventario/generar-token-excel', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+            });
+            var data = await r.json();
+
+            if (!data.success || !data.token) {
+                throw new Error('No se pudo generar el token');
+            }
+
+            // 2. Descargar con el token
+            var result = await window.pywebview.api.descargar_archivo(
+                '/user/inventario/descargar-con-token/' + data.token,
+                null
+            );
+
+            if (result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Descargado',
+                    html: '<p style="font-size:12px;color:#64748b;word-break:break-all;">' +
+                          result.ruta + '</p>',
+                    confirmButtonText: 'Abrir archivo',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cerrar',
+                    confirmButtonColor: '#10b981',
+                }).then(function(r) {
+                    if (r.isConfirmed) {
+                        window.pywebview.api.abrir_archivo_descarga(result.ruta);
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al descargar',
+                    text: result.error || 'Error desconocido',
+                });
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message || e });
+        }
+    } else {
+        window.location.href = '{{ url_for("user.exportar_excel") }}';
+    }
+}
+
+async function descargarPlantilla() {
+    var modo = '{{ "escritorio" if modo_escritorio else "web" }}';
+
+    if (modo === 'escritorio' && window.pywebview && window.pywebview.api) {
+        Swal.fire({
+            title: 'Generando plantilla...',
+            html: '<i class="fas fa-file-alt fa-2x text-amber-500"></i>',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: function() { Swal.showLoading(); }
+        });
+
+        try {
+            // 1. Pedir token
+            var r = await fetch('/user/inventario/generar-token-plantilla', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+            });
+            var data = await r.json();
+
+            if (!data.success || !data.token) {
+                throw new Error('No se pudo generar el token');
+            }
+
+            // 2. Descargar con token
+            var result = await window.pywebview.api.descargar_archivo(
+                '/user/inventario/descargar-con-token/' + data.token,
+                'plantilla_inventario.xlsx'
+            );
+
+            if (result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Plantilla descargada',
+                    html: '<p style="font-size:12px;color:#64748b;word-break:break-all;">' +
+                          result.ruta + '</p>',
+                    confirmButtonText: 'Abrir archivo',
+                    showCancelButton: true,
+                    cancelButtonText: 'Cerrar',
+                    confirmButtonColor: '#10b981',
+                }).then(function(r) {
+                    if (r.isConfirmed) {
+                        window.pywebview.api.abrir_archivo_descarga(result.ruta);
+                    }
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Error desconocido' });
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message || e });
+        }
+    } else {
+        window.location.href = '{{ url_for("user.plantilla_excel") }}';
+    }
+}
+
+</script>
+
+
+<!-- ============================================================
+     MODAL: Escaner de codigos de barras
+     ============================================================ -->
+<div id="modalEscaner" class="hidden fixed inset-0 bg-black/95 z-[100] flex flex-col">
+    <!-- Header -->
+    <div class="p-4 flex justify-between items-center bg-black/40 flex-shrink-0">
+        <h3 class="text-white font-bold text-lg">
+            <i class="fas fa-camera mr-2"></i>
+            Escanear codigo
+        </h3>
+        <button onclick="cerrarEscaner()" class="text-white/80 hover:text-white text-2xl leading-none">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Vista de la camara -->
+    <div class="flex-1 relative overflow-hidden">
+        <div id="qr-reader" class="w-full h-full"></div>
+
+        <!-- Guia visual -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div class="w-72 h-48 border-4 border-white/40 rounded-2xl relative">
+                <div class="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-[#1CA7EC] rounded-tl-2xl"></div>
+                <div class="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-[#1CA7EC] rounded-tr-2xl"></div>
+                <div class="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-[#1CA7EC] rounded-bl-2xl"></div>
+                <div class="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-[#1CA7EC] rounded-br-2xl"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info -->
+    <div class="p-4 text-center bg-black/40 flex-shrink-0">
+        <p class="text-white text-sm font-medium mb-1" id="escanerStatus">Iniciando camara...</p>
+        <p class="text-white/60 text-xs">Apunta al codigo de barras o QR</p>
+    </div>
+
+    <!-- Botones -->
+    <div class="p-4 bg-black/40 flex-shrink-0">
+        <button onclick="cerrarEscaner()" class="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition">
+            Cancelar
+        </button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/html5-qrcode.min.js') }}"></script>
+<script>
+// ============================================================
+// ESCANER DE CODIGOS (html5-qrcode)
+// ============================================================
+var _scanner = null;
+var _scannerAbierto = false;
+var _scannerContexto = 'inventario';
+
+function abrirEscaner(contexto) {
+    _scannerContexto = contexto || 'inventario';
+
+    // Verificar soporte de camara
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Camara no disponible',
+            html: '<p style="font-size:14px;">El navegador bloquea la camara sin HTTPS.</p>' +
+                  '<p style="font-size:13px;color:#64748b;margin-top:8px;">' +
+                  'Para habilitarla, abre Chrome y ve a:<br>' +
+                  '<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:11px;">' +
+                  'chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>' +
+                  '</p>',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+
+    document.getElementById('modalEscaner').classList.remove('hidden');
+    _scannerAbierto = true;
+
+    // Esperar a que el DOM este listo
+    setTimeout(function() {
+        if (typeof Html5Qrcode === 'undefined') {
+            document.getElementById('escanerStatus').textContent = 'Error: libreria no cargada';
+            return;
+        }
+
+        // Crear instancia si no existe
+        if (!_scanner) {
+            _scanner = new Html5Qrcode('qr-reader');
+        }
+
+        // Configuracion
+        var config = {
+            fps: 10,
+            qrbox: { width: 250, height: 150 },
+            aspectRatio: 1.0,
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.QR_CODE,
+            ]
+        };
+
+        // Iniciar camara trasera
+        _scanner.start(
+            { facingMode: 'environment' },
+            config,
+            onCodigoDetectado,
+            onErrorEscaneo
+        ).then(function() {
+            document.getElementById('escanerStatus').textContent = 'Buscando codigo...';
+        }).catch(function(err) {
+            console.error('Error al iniciar camara:', err);
+            document.getElementById('escanerStatus').textContent = 'Error: ' + (err.message || err);
+        });
+    }, 200);
+}
+
+function cerrarEscaner() {
+    if (_scanner && _scanner.isScanning) {
+        _scanner.stop().then(function() {
+            _scanner.clear();
+        }).catch(function() {});
+    }
+    document.getElementById('modalEscaner').classList.add('hidden');
+    _scannerAbierto = false;
+    document.getElementById('escanerStatus').textContent = 'Iniciando camara...';
+}
+
+function onErrorEscaneo(error) {
+    // Silenciar errores de frames sin codigo
+    // console.log('Frame sin codigo');
+}
+
+function onCodigoDetectado(codigo) {
+    if (!_scannerAbierto) return;
+
+    console.log('Codigo detectado:', codigo);
+
+    // Vibracion
+    if (navigator.vibrate) navigator.vibrate(100);
+
+    // Sonido
+    try {
+        var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = 800;
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    } catch(e) {}
+
+    // ✅ Si el contexto es 'codigo', llamar a la funcion del formulario
+    if (_scannerContexto === 'codigo') {
+        onCodigoParaFormulario(codigo);
+        return;
+    }
+
+    // Comportamiento por defecto (buscar)
+    cerrarEscaner();
+
+    if (_scannerContexto === 'ventas') {
+        procesarCodigoVentas(codigo);
+    } else {
+        procesarCodigoInventario(codigo);
+    }
+}
+
+function procesarCodigoInventario(codigo) {
+    var input = document.getElementById('buscadorInventario');
+    if (input) {
+        input.value = codigo;
+        input.form.submit();
+    }
+}
+
+function procesarCodigoVentas(codigo) {
+    // Buscar el producto por codigo en el DOM
+    var productos = document.querySelectorAll('.producto-item');
+    var encontrado = null;
+
+    for (var i = 0; i < productos.length; i++) {
+        var el = productos[i];
+        var dataCodigo = (el.dataset.codigo || '').toLowerCase();
+        var codigoBuscado = codigo.toLowerCase();
+
+        if (dataCodigo === codigoBuscado) {
+            encontrado = el;
+            break;
+        }
+    }
+
+    if (encontrado) {
+        // Simular click para agregar al carrito
+        encontrado.click();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Agregado',
+                text: codigo,
+                timer: 1000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        }
+    } else {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Producto no encontrado',
+                text: 'Codigo: ' + codigo,
+                confirmButtonColor: '#1CA7EC'
+            });
+        } else {
+            alert('Producto no encontrado: ' + codigo);
+        }
+    }
+}
+
+// Cerrar con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && _scannerAbierto) {
+        cerrarEscaner();
+    }
+});
+
+
+// ============================================================
+// ESCANER PARA EL CAMPO "CODIGO" DEL FORMULARIO
+// ============================================================
+function escanearParaCodigo() {
+    console.log('escanearParaCodigo() llamado');
+
+    // Verificar soporte de camara
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Camara no disponible',
+            html: '<p style="font-size:14px;">El navegador bloquea la camara sin HTTPS.</p>' +
+                  '<p style="font-size:13px;color:#64748b;margin-top:8px;">' +
+                  'Para habilitarla, abre Chrome y ve a:<br>' +
+                  '<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:11px;">' +
+                  'chrome://flags/#unsafely-treat-insecure-origin-as-secure</code>' +
+                  '</p>',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+
+    var modalExistente = document.getElementById('modalEscaner');
+    if (!modalExistente) {
+        console.error('No existe modalEscaner');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'El modal del escaner no esta disponible'
+        });
+        return;
+    }
+
+    // Cambiar el contexto del escaner
+    _scannerContexto = 'codigo';
+    console.log('Contexto cambiado a codigo');
+
+    // Abrir el escaner
+    document.getElementById('modalEscaner').classList.remove('hidden');
+    _scannerAbierto = true;
+
+    setTimeout(function() {
+        if (typeof Html5Qrcode === 'undefined') {
+            document.getElementById('escanerStatus').textContent = 'Error: libreria no cargada';
+            console.error('Html5Qrcode no esta definida');
+            return;
+        }
+
+        if (!_scanner) {
+            _scanner = new Html5Qrcode('qr-reader');
+        }
+
+        var config = {
+            fps: 10,
+            qrbox: { width: 250, height: 150 },
+            aspectRatio: 1.0
+        };
+
+        _scanner.start(
+            { facingMode: 'environment' },
+            config,
+            function(codigo) {
+                console.log('Codigo detectado:', codigo);
+                if (!_scannerAbierto) return;
+
+                if (navigator.vibrate) navigator.vibrate(100);
+
+                try {
+                    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    var osc = audioCtx.createOscillator();
+                    var gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.frequency.value = 800;
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } catch(e) {}
+
+                cerrarEscaner();
+
+                var inputCodigo = document.getElementById('f_codigo');
+                if (inputCodigo) {
+                    inputCodigo.value = codigo;
+                    inputCodigo.classList.add('ring-4', 'ring-emerald-400');
+                    setTimeout(function() {
+                        inputCodigo.classList.remove('ring-4', 'ring-emerald-400');
+                    }, 800);
+                    inputCodigo.focus();
+                    inputCodigo.select();
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Codigo escaneado',
+                        text: codigo,
+                        timer: 1200,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                }
+            },
+            function() {}
+        ).then(function() {
+            document.getElementById('escanerStatus').textContent = 'Escaneando para el campo Codigo...';
+        }).catch(function(err) {
+            console.error('Error al iniciar camara:', err);
+            document.getElementById('escanerStatus').textContent = 'Error: ' + (err.message || err);
+        });
+    }, 200);
+}
+
+</script>
+
+{% endblock %}

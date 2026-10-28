@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Inventario{% endblock %}
+{% block page_title %}Inventario{% endblock %}
+{% block page_subtitle %}{{ stats.total }} productos · {{ stats.stock_total }} unidades{% endblock %}
+{% block sidebar %}{% include 'vendedor/_sidebar.html' %}{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Total Productos</p>
+        <p class="text-2xl font-bold text-slate-900">{{ stats.total }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Stock Total</p>
+        <p class="text-2xl font-bold text-[#1CA7EC]">{{ stats.stock_total }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Bajo Stock</p>
+        <p class="text-2xl font-bold text-amber-500">{{ stats.bajo_stock }}</p>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="bg-white rounded-xl border border-slate-200 p-4 mb-6">
+    <form method="GET" class="flex gap-3">
+        <div class="flex-1 relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input type="text" name="search" value="{{ search }}" placeholder="Buscar producto..."
+                   class="input pl-10">
+        </div>
+        <select name="categoria" class="input" style="width: 200px;">
+            <option value="">Todas las categorías</option>
+            {% for c in categorias %}
+            <option value="{{ c }}" {% if c == categoria %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Filtrar
+        </button>
+        <a href="{{ url_for('vendedor.inventario') }}" class="btn btn-secondary">
+            <i class="fas fa-times"></i>
+        </button>
+    </form>
+</div>
+
+<!-- Tabla -->
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    {% if productos %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Producto</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Código</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Categoría</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Precio</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">Stock</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for p in productos %}
+                <tr class="table-row">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            {% if p.imagen_url %}
+                                <img src="{{ p.imagen_url }}" class="w-10 h-10 rounded-lg object-cover" alt="">
+                            {% else %}
+                                <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                                    <i class="fas fa-box text-slate-400"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <p class="font-medium text-slate-800">{{ p.nombre }}</p>
+                                {% if p.marca %}<p class="text-xs text-slate-500">{{ p.marca }}</p>{% endif %}
+                                {% if p.variantes.count() > 0 %}
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    {% for v in p.variantes.all() %}
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#e6f7ff] text-[#1CA7EC] font-medium">
+                                        {{ v.nombre }} ({{ v.stock_actual }})
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ p.codigo }}</td>
+                    <td class="px-4 py-3 text-slate-600">{{ p.categoria or '-' }}</td>
+                    <td class="px-4 py-3 text-right font-medium text-slate-900">${{ "%.2f"|format(p.precio_venta_usd or 0) }}</td>
+                    <td class="px-4 py-3 text-center">
+                        {% if p.stock_actual == 0 %}
+                            <span class="badge bg-red-100 text-red-700">Agotado</span>
+                        {% elif p.stock_bajo %}
+                            <span class="badge bg-amber-100 text-amber-700">{{ p.stock_actual }}</span>
+                        {% else %}
+                            <span class="badge bg-emerald-100 text-emerald-700">{{ p.stock_actual }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-box-open text-slate-300 text-5xl mb-3"></i>
+        <p class="text-slate-500">No hay productos con estos filtros</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

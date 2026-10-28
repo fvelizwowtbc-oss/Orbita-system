@@ -1,0 +1,239 @@
+﻿{% extends 'base.html' %}
+{% block title %}Clientes{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+{% block page_subtitle %}{{ clientes|length }} cliente{% if clientes|length != 1 %}s{% endif %} registrado{% if clientes|length != 1 %}s{% endif %}{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block header_actions %}
+<button onclick="abrirNuevo()" class="bg-[#1CA7EC] hover:bg-[#1892d4] text-white px-4 py-2 rounded-lg text-sm font-medium transition" data-ripple>
+    <i class="fas fa-plus mr-1"></i> Nuevo Cliente
+</button>
+{% endblock %}
+
+{% block content %}
+
+{% if clientes %}
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-500 uppercase">Total Clientes</p>
+                <p class="text-2xl font-bold text-slate-800 mt-1">{{ clientes|length }}</p>
+            </div>
+            <div class="w-11 h-11 bg-[#e6f7ff] rounded-lg flex items-center justify-center">
+                <i class="fas fa-users text-[#1CA7EC]"></i>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-500 uppercase">Con Documento</p>
+                <p class="text-2xl font-bold text-slate-800 mt-1">{{ clientes|selectattr('documento')|list|length }}</p>
+            </div>
+            <div class="w-11 h-11 bg-[#d4f7f7] rounded-lg flex items-center justify-center">
+                <i class="fas fa-id-card text-[#4ADEDE]"></i>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs font-medium text-slate-500 uppercase">Con Email</p>
+                <p class="text-2xl font-bold text-slate-800 mt-1">{{ clientes|selectattr('email')|list|length }}</p>
+            </div>
+            <div class="w-11 h-11 bg-[#ede9fe] rounded-lg flex items-center justify-center">
+                <i class="fas fa-envelope text-[#787FF6]"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Buscador -->
+<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6 anim-hover-lift">
+    <div class="relative">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="buscadorClientes" placeholder="Buscar por nombre, documento, teléfono o email..."
+               class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+               oninput="filtrarClientes()">
+    </div>
+</div>
+
+<!-- Tabla -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden anim-hover-lift">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Cliente</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Documento</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Teléfono</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Email</th>
+                    <th class="text-left px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Dirección</th>
+                    <th class="text-right px-4 py-3 font-semibold text-slate-600 text-xs uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100" data-anim-stagger id="tablaClientes">
+                {% for c in clientes %}
+                <tr class="hover:bg-slate-50 cliente-row"
+                    data-busqueda="{{ (c.nombre ~ ' ' ~ (c.documento or '') ~ ' ' ~ (c.telefono or '') ~ ' ' ~ (c.email or '')).lower() }}">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-semibold text-sm">
+                                {{ c.nombre[0]|upper }}
+                            </div>
+                            <span class="font-medium text-slate-800">{{ c.nombre }}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-slate-600">{{ c.documento or '—' }}</td>
+                    <td class="px-4 py-3 text-slate-600">
+                        {% if c.telefono %}
+                            <i class="fas fa-phone text-slate-400 text-xs mr-1"></i> {{ c.telefono }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-slate-600">
+                        {% if c.email %}
+                            <i class="fas fa-envelope text-slate-400 text-xs mr-1"></i> {{ c.email }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-slate-600 max-w-xs truncate">
+                        {{ c.direccion or '—' }}
+                    </td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <button onclick='editarCliente({{ c.id }}, {{ c.nombre|tojson }}, {{ (c.telefono or "")|tojson }}, {{ (c.email or "")|tojson }}, {{ (c.direccion or "")|tojson }}, {{ (c.documento or "")|tojson }})'
+                                class="text-[#1CA7EC] hover:text-blue-800 p-1" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('user.eliminar_cliente', cliente_id=c.id) }}" class="inline"
+                              onsubmit="return confirm('¿Eliminar cliente {{ c.nombre }}?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="text-red-600 hover:text-red-800 p-1 ml-1" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 text-center py-16 anim-hover-lift">
+    <i class="fas fa-users text-slate-300 text-5xl mb-4"></i>
+    <p class="text-slate-500 mb-4">No hay clientes registrados</p>
+    <button onclick="abrirNuevo()" class="bg-[#1CA7EC] hover:bg-[#1892d4] text-white px-4 py-2 rounded-lg text-sm" data-ripple>
+        <i class="fas fa-plus mr-1"></i> Agregar el primero
+    </button>
+</div>
+{% endif %}
+
+<!-- Modal: Cliente -->
+<div id="modalCliente" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 id="tituloCliente" class="font-bold text-lg">Nuevo Cliente</h3>
+            <button onclick="cerrarModal()" class="text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="formCliente" method="POST" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre completo *</label>
+                <input type="text" name="nombre" id="c_nombre" required
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+                       placeholder="Juan Pérez">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Documento (CI/RIF)</label>
+                <input type="text" name="documento" id="c_documento"
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+                       placeholder="V-12345678">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
+                <input type="tel" name="telefono" id="c_telefono"
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+                       placeholder="04141234567">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input type="email" name="email" id="c_email"
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+                       placeholder="cliente@email.com">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
+                <textarea name="direccion" id="c_direccion" rows="2"
+                          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none"
+                          placeholder="Av. Principal, Caracas"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
+                <button type="button" onclick="cerrarModal()"
+                        class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-sm">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-6 py-2 bg-[#1CA7EC] hover:bg-[#1892d4] text-white rounded-lg text-sm font-medium" data-ripple>
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirNuevo() {
+    document.getElementById('tituloCliente').textContent = 'Nuevo Cliente';
+    document.getElementById('formCliente').action = "{{ url_for('user.clientes') }}";
+    document.getElementById('formCliente').reset();
+    document.getElementById('modalCliente').classList.remove('hidden');
+    setTimeout(() => document.getElementById('c_nombre').focus(), 100);
+}
+
+function editarCliente(id, nombre, telefono, email, direccion, documento) {
+    document.getElementById('tituloCliente').textContent = 'Editar Cliente';
+    document.getElementById('formCliente').action = `/user/clientes/${id}/editar`;
+    document.getElementById('c_nombre').value = nombre || '';
+    document.getElementById('c_telefono').value = telefono || '';
+    document.getElementById('c_email').value = email || '';
+    document.getElementById('c_direccion').value = direccion || '';
+    document.getElementById('c_documento').value = documento || '';
+    document.getElementById('modalCliente').classList.remove('hidden');
+}
+
+function cerrarModal() {
+    document.getElementById('modalCliente').classList.add('hidden');
+}
+
+function filtrarClientes() {
+    const q = document.getElementById('buscadorClientes').value.toLowerCase().trim();
+    document.querySelectorAll('.cliente-row').forEach(row => {
+        const match = row.dataset.busqueda.includes(q);
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') cerrarModal();
+});
+
+// Cerrar modal al hacer click fuera
+document.getElementById('modalCliente')?.addEventListener('click', e => {
+    if (e.target.id === 'modalCliente') cerrarModal();
+});
+</script>
+{% endblock %}

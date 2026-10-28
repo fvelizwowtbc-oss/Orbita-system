@@ -1,0 +1,791 @@
+﻿<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        // CSRF token global - mas robusto que {{ csrf_token() }} inline
+        window.CSRF_TOKEN = "{{ csrf_token() }}";
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        accent: '#3b82f6',
+                        surface: '#fafafa',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animaciones.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="{{ url_for('static', filename='vendor/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+    
+    <style>
+        * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        body { font-family: 'Inter', sans-serif; font-feature-settings: 'cv02','cv03','cv04','cv11'; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .sidebar { width: 80px; transition: width 0.3s cubic-bezier(0.4,0,0.2,1); overflow: hidden; }
+        .sidebar.expanded { width: 272px; }
+        .sidebar-logo { width: 56px; height: 56px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .sidebar.expanded .sidebar-logo { width: 192px; height: 192px; }
+        .sidebar-link { position: relative; transition: background-color 0.2s ease, color 0.2s ease; border-radius: 10px; margin: 2px 12px; padding: 12px; font-size: 14px; font-weight: 500; color: #cbd5e1; display: flex; align-items: center; gap: 12px; white-space: nowrap; overflow: hidden; }
+        .sidebar-link:hover { background-color: rgba(255,255,255,0.06); color: #f1f5f9; }
+        .sidebar-link.active { background-color: rgba(59,130,246,0.15); color: #fff; }
+        .sidebar-link.active::before { content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%); width: 3px; height: 20px; background: #3b82f6; border-radius: 0 3px 3px 0; }
+        .sidebar-link i { font-size: 18px; width: 20px; text-align: center; flex-shrink: 0; }
+        .sidebar-link span { opacity: 0; transition: opacity 0.2s ease 0.05s; }
+        .sidebar.expanded .sidebar-link span { opacity: 1; }
+        .sidebar-user-info { opacity: 0; transition: opacity 0.2s ease; max-width: 0; overflow: hidden; }
+        .sidebar.expanded .sidebar-user-info { opacity: 1; max-width: 200px; }
+        .sidebar-divider { margin: 8px 16px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; transition: border-color .2s, box-shadow .2s; }
+        .card-hover:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(15,23,42,.04); }
+        .input { width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; transition: border-color .15s, box-shadow .15s; background: #fff; }
+        .input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+        .input::placeholder { color: #94a3b8; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; font-size: 14px; font-weight: 500; border-radius: 10px; cursor: pointer; border: none; white-space: nowrap; transition: background-color .15s, transform .15s, box-shadow .15s; }
+        .btn:active { transform: scale(.98); }
+        .btn-primary { background: #0f172a; color: #fff; }
+        .btn-primary:hover { background: #1e293b; box-shadow: 0 4px 12px rgba(15,23,42,.15); }
+        .btn-secondary { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: #10b981; color: #fff; }
+        .btn-success:hover { background: #059669; }
+        .table-row { transition: background-color .1s ease; }
+        .table-row:hover { background-color: #f8fafc; }
+        .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+        .modal-overlay { backdrop-filter: blur(4px); background: rgba(15,23,42,.4); }
+        .modal-content { animation: anim-slide-up 0.25s cubic-bezier(0.16,1,0.3,1); }
+    </style>
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-surface">
+{% if current_user.is_authenticated %}
+<div class="flex h-screen overflow-hidden">
+    
+    <!-- Sidebar -->
+    <aside id="sidebarPrincipal" class="sidebar bg-gradient-to-b from-[#1F2F98] to-[#121b60] flex-shrink-0 flex flex-col">
+        
+        <!-- Logo -->
+        <div class="py-5 flex items-center justify-center sidebar-logo-container" style="min-height: 96px;">
+            <img src="{{ url_for('static', filename='logo.png') }}"
+                 alt="Logo"
+                 class="sidebar-logo object-contain"
+                 onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
+            <div id="logo-fallback" class="hidden items-center gap-3">
+                <div class="w-10 h-10 bg-[#1CA7EC] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-cube text-white"></i>
+                </div>
+                <div class="sidebar-user-info">
+                    <h1 class="font-bold text-lg text-white whitespace-nowrap">Sistema</h1>
+                    <p class="text-xs text-slate-400 whitespace-nowrap">Gestión</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="sidebar-divider"></div>
+
+        <!-- Nav -->
+        <nav class="flex-1 overflow-y-auto overflow-x-hidden py-3">
+            {% block sidebar %}{% endblock %}
+        </nav>
+
+        <!-- User (clickeable para abrir modal de perfil) -->
+        <div class="p-3 border-t border-white/5">
+            <button type="button" onclick="abrirModalPerfil()" class="w-full flex items-center gap-3 px-3 py-2 mb-1 rounded-lg hover:bg-white/5 transition text-left">
+                <div class="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[#1CA7EC] flex items-center justify-center text-white font-semibold text-sm">
+                    {% if current_user.foto_perfil %}
+                        <img src="{{ url_for('static', filename='uploads/perfiles/' + current_user.foto_perfil) }}"
+                             alt="{{ current_user.nombre }}"
+                             class="w-full h-full object-cover"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <span style="display:none;" class="w-full h-full items-center justify-center">{{ current_user.nombre[0] | upper }}</span>
+                    {% else %}
+                        {{ current_user.nombre[0] | upper }}
+                    {% endif %}
+                </div>
+                <div class="sidebar-user-info flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate whitespace-nowrap flex items-center gap-1.5">
+                        <span class="truncate">{{ current_user.nombre }}</span>
+                        {% if current_user.suscripcion_vigente %}
+                            <i class="fas fa-star text-yellow-400 text-xs flex-shrink-0" title="Plan VIP - Ilimitado"></i>
+                        {% else %}
+                            <i class="fas fa-star text-slate-500 text-xs flex-shrink-0" title="Plan Free - Limitado"></i>
+                        {% endif %}
+                    </p>
+                    <p class="text-xs text-slate-400 truncate whitespace-nowrap">{{ current_user.email }}</p>
+                </div>
+            </button>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link" title="Cerrar sesión">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 overflow-y-auto">
+        <header class="bg-white/80 backdrop-blur-sm border-b border-slate-200 px-8 py-5 flex items-center justify-between sticky top-0 z-10">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">
+                    {% block page_title %}{% endblock %}
+                </h1>
+                <p class="text-sm text-slate-500 mt-0.5">
+                    {% block page_subtitle %}{% endblock %}
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                {% if not current_user.es_vendedor and tasas %}
+                <div class="relative" id="widgetTasa">
+                    <button type="button" onclick="toggleWidgetTasa()" 
+                            class="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-sm">
+                        <i class="fas fa-dollar-sign text-[#4ADEDE]"></i>
+                        <span class="font-medium text-slate-700" id="tasaMostrada">Bs. 0,00</span>
+                        <span id="tasaFuente" class="text-xs px-1.5 py-0.5 rounded bg-[#e6f7ff] text-[#1CA7EC]">BCV</span>
+                        <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                    </button>
+                    
+                    <div id="dropdownTasa" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-slate-200 p-4 z-50 anim-scale-in">
+                        <h3 class="font-bold text-sm mb-3 text-slate-800">
+                            <i class="fas fa-exchange-alt text-[#1CA7EC] mr-1"></i>
+                            Tasa del sistema
+                        </h3>
+                        
+                        <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200 mb-2">
+                            <input type="radio" name="modoTasa" value="auto" id="radioAuto" class="mt-0.5" onchange="alCambiarModo()">
+                            <div class="flex-1">
+                                <p class="font-medium text-sm text-slate-800">Automática (BCV)</p>
+                                <p class="text-xs text-slate-500">Se actualiza desde el BCV</p>
+                                <p class="text-xs font-semibold text-[#1CA7EC] mt-1" id="tasaBCVDisplay">Bs. 0,00</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200">
+                            <input type="radio" name="modoTasa" value="manual" id="radioManual" class="mt-0.5" onchange="alCambiarModo()">
+                            <div class="flex-1">
+                                <p class="font-medium text-sm text-slate-800">Manual</p>
+                                <p class="text-xs text-slate-500">Fija la tasa tú mismo</p>
+                                <input type="number" step="0.01" id="inputTasaManual" min="1"
+                                       class="mt-2 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm"
+                                       placeholder="Ej: 857.00" disabled>
+                            </div>
+                        </label>
+                        
+                        <button type="button" id="btnGuardarTasa"
+                                class="btn btn-primary w-full mt-3">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% block header_actions %}{% endblock %}
+            </div>
+        </header>
+
+        <div class="p-8 anim-fade-in">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="mb-6 px-4 py-3 rounded-xl flex items-start gap-3 anim-notification-in
+                        {% if category == 'success' %}bg-[#ecfefe] text-emerald-800 border border-emerald-200
+                        {% elif category == 'danger' %}bg-red-50 text-red-800 border border-red-200
+                        {% elif category == 'warning' %}bg-amber-50 text-amber-800 border border-amber-200
+                        {% else %}bg-[#e6f7ff] text-blue-800 border border-[#b8e8fb]{% endif %}">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mt-0.5"></i>
+                        <span class="text-sm">{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+{% else %}
+    {% block auth_content %}{% endblock %}
+{% endif %}
+
+{% block scripts %}{% endblock %}
+
+{% if current_user.is_authenticated and not current_user.es_vendedor %}
+<script>
+// ============================================================
+// WIDGET DE TASA
+// ============================================================
+(function() {
+    'use strict';
+    
+    var _TASA_MODO = "{{ (tasas.modo_tasa if tasas else 'auto') }}";
+    var _TASA_ACTUAL = {{ ((tasas.oficial if tasas and tasas.oficial else 50) or 50)|float }};
+    var _TASA_BCV = {{ ((tasas.tasa_bcv if tasas and tasas.tasa_bcv else 50) or 50)|float }};
+    var _TASA_MANUAL = {{ ((tasas.tasa_manual_valor if tasas and tasas.tasa_manual_valor else 0) or 0)|float }};
+    var _TASA_FUENTE = "{{ (tasas.fuente_oficial if tasas else 'BCV') }}";
+    var _CSRF = "{{ csrf_token() }}";
+    
+    window.toggleWidgetTasa = function() {
+        var dd = document.getElementById('dropdownTasa');
+        if (dd) dd.classList.toggle('hidden');
+    };
+    
+    window.alCambiarModo = function() {
+        var manual = document.getElementById('radioManual');
+        var input = document.getElementById('inputTasaManual');
+        if (manual && manual.checked && input) {
+            input.disabled = false;
+            input.focus();
+        } else if (input) {
+            input.disabled = true;
+        }
+    };
+    
+    window.guardarModoTasa = function() {
+        var modoEl = document.querySelector('input[name="modoTasa"]:checked');
+        if (!modoEl) {
+            Swal.fire({ icon: 'warning', title: 'Selecciona un modo', confirmButtonColor: '#f59e0b' });
+            return;
+        }
+        
+        var modo = modoEl.value;
+        var tasaManual = null;
+        
+        if (modo === 'manual') {
+            var inputEl = document.getElementById('inputTasaManual');
+            tasaManual = inputEl ? parseFloat(inputEl.value) : null;
+            if (!tasaManual || tasaManual <= 0) {
+                Swal.fire({ icon: 'warning', title: 'Tasa inválida', text: 'Ingresa una tasa mayor a 0', confirmButtonColor: '#f59e0b' });
+                return;
+            }
+        }
+        
+        var btn = document.getElementById('btnGuardarTasa');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
+        
+        var payload = { modo: modo };
+        if (tasaManual !== null) payload.tasa_manual = tasaManual;
+        
+        fetch(window.location.origin + '/user/cambiar-modo-tasa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _CSRF },
+            body: JSON.stringify(payload)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Guardar'; }
+            
+            if (data && data.success) {
+                var dd = document.getElementById('dropdownTasa');
+                if (dd) dd.classList.add('hidden');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Tasa actualizada',
+                    html: '<div style="text-align:left;padding:8px 0;">' +
+                          '<div style="padding:8px 0;border-bottom:1px solid #e2e8f0;">' +
+                          '<strong style="color:#64748b;">Fuente:</strong> ' + data.fuente +
+                          '</div>' +
+                          '<div style="padding:8px 0;">' +
+                          '<strong style="color:#64748b;">Tasa:</strong> ' +
+                          '<span style="color:#10b981;font-weight:700;font-size:1.1em;">Bs. ' +
+                          parseFloat(data.tasa_activa).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) +
+                          '</span>' +
+                          '</div>' +
+                          '</div>',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#10b981',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(function() {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: (data && data.error) || 'Error desconocido', confirmButtonColor: '#dc2626' });
+            }
+        })
+        .catch(function(e) {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Guardar'; }
+            Swal.fire({ icon: 'error', title: 'Error de conexión', text: e.message, confirmButtonColor: '#dc2626' });
+        });
+    };
+    
+    function initWidget() {
+        var tasaMostrada = document.getElementById('tasaMostrada');
+        var tasaFuente = document.getElementById('tasaFuente');
+        var tasaBcvDisplay = document.getElementById('tasaBCVDisplay');
+        var inputManual = document.getElementById('inputTasaManual');
+        
+        if (tasaMostrada && _TASA_ACTUAL > 0) {
+            tasaMostrada.textContent = 'Bs. ' + _TASA_ACTUAL.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        if (tasaBcvDisplay && _TASA_BCV > 0) {
+            tasaBcvDisplay.textContent = 'Bs. ' + _TASA_BCV.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        if (inputManual && _TASA_MANUAL > 0) {
+            inputManual.value = _TASA_MANUAL.toFixed(2);
+        }
+        
+        if (_TASA_MODO === 'manual') {
+            var rm = document.getElementById('radioManual');
+            if (rm) rm.checked = true;
+            if (inputManual) inputManual.disabled = false;
+            if (tasaFuente) {
+                tasaFuente.textContent = 'Manual';
+                tasaFuente.className = 'text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700';
+            }
+        } else {
+            var ra = document.getElementById('radioAuto');
+            if (ra) ra.checked = true;
+        }
+        
+        var btnG = document.getElementById('btnGuardarTasa');
+        if (btnG && !btnG._attached) {
+            btnG._attached = true;
+            btnG.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.guardarModoTasa();
+            });
+        }
+        
+        document.addEventListener('click', function(e) {
+            var widget = document.getElementById('widgetTasa');
+            var dropdown = document.getElementById('dropdownTasa');
+            if (widget && dropdown && !widget.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWidget);
+    } else {
+        initWidget();
+    }
+})();
+
+// (bloque movido a su propio script)
+
+// Helper toast global
+window.toastSuccess = function(msg, timer) {
+    Swal.fire({ icon: 'success', title: msg, timer: timer || 2000, showConfirmButton: false, timerProgressBar: true });
+};
+window.toastError = function(msg) {
+    Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#dc2626' });
+};
+</script>
+{% endif %}
+
+
+<!-- SIDEBAR EXPANDIBLE -->
+<script>
+(function () {
+    'use strict';
+    const sidebar = document.getElementById('sidebarPrincipal');
+    if (!sidebar) return;
+
+    const DELAY_EXPAND = 150;
+    const DELAY_COLLAPSE = 5000;
+    let tExpand = null;
+    let tCollapse = null;
+
+    sidebar.addEventListener('mouseenter', () => {
+        clearTimeout(tCollapse);
+        tCollapse = null;
+        clearTimeout(tExpand);
+        tExpand = setTimeout(() => sidebar.classList.add('expanded'), DELAY_EXPAND);
+    });
+
+    sidebar.addEventListener('mouseleave', () => {
+        clearTimeout(tExpand);
+        tExpand = null;
+        clearTimeout(tCollapse);
+        tCollapse = setTimeout(() => sidebar.classList.remove('expanded'), DELAY_COLLAPSE);
+    });
+})();
+</script>
+
+
+
+<!-- ============================================================
+     MODAL DE PERFIL
+     ============================================================ -->
+<div id="modalPerfil" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl max-h-[95vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] rounded-t-2xl flex justify-between items-center">
+            <div>
+                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                    <i class="fas fa-user-circle"></i>
+                    Mi perfil
+                </h3>
+                <p class="text-xs text-white/70 mt-0.5">Cambia tu foto de perfil</p>
+            </div>
+            <button type="button" onclick="cerrarModalPerfil()" class="text-white/70 hover:text-white">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Foto actual + preview -->
+        <div class="p-6 text-center">
+            <div class="relative inline-block">
+                <div id="previewFotoContainer" class="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] flex items-center justify-center text-white font-bold text-4xl mx-auto shadow-lg">
+                    {% if current_user.foto_perfil %}
+                        <img id="previewFotoImg"
+                             src="{{ url_for('static', filename='uploads/perfiles/' + current_user.foto_perfil) }}"
+                             alt="{{ current_user.nombre }}"
+                             class="w-full h-full object-cover"
+                             onerror="this.style.display='none'; document.getElementById('previewFotoInicial').style.display='flex';">
+                        <span id="previewFotoInicial" style="display:none;" class="w-full h-full items-center justify-center">{{ current_user.nombre[0] | upper }}</span>
+                    {% else %}
+                        <img id="previewFotoImg" src="" alt="" class="w-full h-full object-cover hidden">
+                        <span id="previewFotoInicial" class="w-full h-full flex items-center justify-center">{{ current_user.nombre[0] | upper }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p class="font-bold text-slate-900 mt-4 flex items-center justify-center gap-1.5">
+                {{ current_user.nombre }}
+                {% if current_user.suscripcion_vigente %}
+                    <i class="fas fa-star text-yellow-400 text-sm" title="Plan VIP"></i>
+                {% else %}
+                    <i class="fas fa-star text-slate-400 text-sm" title="Plan Free"></i>
+                {% endif %}
+            </p>
+            <p class="text-sm text-slate-500">{{ current_user.email }}</p>
+            <p class="text-xs text-slate-400 mt-1">
+                {% if current_user.suscripcion_vigente %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+                        <i class="fas fa-crown"></i> Plan VIP
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+                        <i class="fas fa-user"></i> Plan Free
+                    </span>
+                {% endif %}
+            </p>
+
+            <input type="file" id="inputFotoPerfil" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" class="hidden" onchange="subirFotoPerfil(this)">
+        </div>
+
+        {% if not current_user.es_vendedor and current_user.role != 'admin' %}
+        <!-- ============================================================
+             SECCION: PIN DE CANCELACION (solo VIP)
+             ============================================================ -->
+        <div id="seccionPin" class="px-6 pb-4">
+            <div class="border-t border-slate-200 pt-4">
+                <h4 class="font-semibold text-slate-800 text-sm mb-1 flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-[#1CA7EC]"></i>
+                    PIN de cancelacion de ventas
+                </h4>
+                <p class="text-xs text-slate-500 mb-3">
+                    Configura un PIN de 6 digitos. Lo necesitaras para cancelar facturas.
+                    Compartelo con tus vendedores si quieres que ellos tambien puedan cancelar.
+                </p>
+
+                {% if current_user.tiene_pin_cancelacion %}
+                <div class="mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p class="text-xs text-emerald-700 flex items-center gap-1">
+                        <i class="fas fa-check-circle"></i>
+                        PIN configurado
+                    </p>
+                </div>
+                {% else %}
+                <div class="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p class="text-xs text-amber-700 flex items-center gap-1">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No has configurado un PIN
+                    </p>
+                </div>
+                {% endif %}
+
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nuevo PIN (6 digitos)</label>
+                        <input type="password" id="inputPin" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                               placeholder="••••••"
+                               class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm text-center tracking-widest font-mono focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Confirmar PIN</label>
+                        <input type="password" id="inputPinConfirm" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                               placeholder="••••••"
+                               class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm text-center tracking-widest font-mono focus:ring-2 focus:ring-[#1CA7EC] outline-none">
+                    </div>
+                    <button type="button" onclick="guardarPin()"
+                            class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        {% if current_user.tiene_pin_cancelacion %}Cambiar PIN{% else %}Guardar PIN{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Botones -->
+        <div class="px-6 pb-6 space-y-2">
+            <button type="button" onclick="document.getElementById('inputFotoPerfil').click()"
+                    class="w-full py-2.5 bg-gradient-to-r from-[#1CA7EC] to-[#787FF6] hover:opacity-95 text-white font-medium rounded-xl transition flex items-center justify-center gap-2">
+                <i class="fas fa-camera"></i>
+                {% if current_user.foto_perfil %}Cambiar foto{% else %}Subir foto{% endif %}
+            </button>
+
+            {% if current_user.foto_perfil %}
+            <button type="button" onclick="eliminarFotoPerfil()"
+                    class="w-full py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 font-medium rounded-xl transition flex items-center justify-center gap-2">
+                <i class="fas fa-trash"></i>
+                Eliminar foto
+            </button>
+            {% endif %}
+
+            <a href="{{ url_for('auth.logout') }}"
+               class="w-full py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium rounded-xl transition flex items-center justify-center gap-2">
+                <i class="fas fa-sign-out-alt"></i>
+                Cerrar sesión
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Loader mientras sube la foto -->
+<div id="loaderFoto" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl">
+        <i class="fas fa-spinner fa-spin text-4xl text-[#1CA7EC] mb-3"></i>
+        <p class="text-slate-700 font-medium">Subiendo foto...</p>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// MODAL DE PERFIL
+// ============================================================
+function abrirModalPerfil() {
+    document.getElementById('modalPerfil').classList.remove('hidden');
+}
+
+function cerrarModalPerfil() {
+    document.getElementById('modalPerfil').classList.add('hidden');
+}
+
+// Cerrar al hacer click fuera
+document.getElementById('modalPerfil').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalPerfil();
+});
+
+// Cerrar con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarModalPerfil();
+});
+
+// Subir foto
+async function subirFotoPerfil(input) {
+    if (!input.files || !input.files[0]) return;
+
+    const archivo = input.files[0];
+
+    // Validar tamaño (2 MB)
+    if (archivo.size > 2 * 1024 * 1024) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Imagen muy grande',
+            text: `La imagen pesa ${(archivo.size/1024/1024).toFixed(1)}MB. Maximo 2MB.`,
+            confirmButtonColor: '#dc2626'
+        });
+        input.value = '';
+        return;
+    }
+
+    // Preview local inmediato
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = document.getElementById('previewFotoImg');
+        const ini = document.getElementById('previewFotoInicial');
+        img.src = e.target.result;
+        img.classList.remove('hidden');
+        img.style.display = 'block';
+        if (ini) ini.style.display = 'none';
+    };
+    reader.readAsDataURL(archivo);
+
+    // Mostrar loader
+    document.getElementById('loaderFoto').classList.remove('hidden');
+
+    // Subir al servidor
+    const formData = new FormData();
+    formData.append('foto', archivo);
+
+    // CSRF
+    const csrf = "{{ csrf_token() }}";
+
+    try {
+        const r = await fetch('/perfil/foto', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf },
+            body: formData,
+        });
+        const data = await r.json();
+
+        document.getElementById('loaderFoto').classList.add('hidden');
+
+        if (data.success) {
+            // Actualizar avatar del sidebar
+            const avatares = document.querySelectorAll('.sidebar-user-info');
+            // Recargar la pagina para reflejar cambios
+            Swal.fire({
+                icon: 'success',
+                title: 'Foto actualizada',
+                timer: 1500,
+                showConfirmButton: false,
+                timerProgressBar: true,
+            }).then(() => location.reload());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#dc2626' });
+        }
+    } catch (err) {
+        document.getElementById('loaderFoto').classList.add('hidden');
+        Swal.fire({ icon: 'error', title: 'Error de conexion', text: err.message });
+    }
+
+    input.value = '';
+}
+
+// Eliminar foto
+async function eliminarFotoPerfil() {
+    const result = await Swal.fire({
+        title: 'Eliminar foto?',
+        text: 'Se borrara tu foto de perfil actual.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Si, eliminar',
+        cancelButtonText: 'Cancelar',
+    });
+
+    if (!result.isConfirmed) return;
+
+    const csrf = "{{ csrf_token() }}";
+
+    try {
+        const r = await fetch('/perfil/foto/eliminar', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf },
+        });
+        const data = await r.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Foto eliminada',
+                timer: 1500,
+                showConfirmButton: false,
+            }).then(() => location.reload());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+        }
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    }
+}
+
+
+// ============================================================
+// GUARDAR PIN DE CANCELACION
+// ============================================================
+async function guardarPin() {
+    const pin = document.getElementById('inputPin').value.trim();
+    const pinConfirm = document.getElementById('inputPinConfirm').value.trim();
+
+    // Validaciones
+    if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'PIN invalido',
+            text: 'El PIN debe tener exactamente 6 digitos',
+            confirmButtonColor: '#f59e0b',
+        });
+        return;
+    }
+
+    if (pin !== pinConfirm) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Los PINes no coinciden',
+            text: 'Verifica que hayas escrito el mismo PIN en ambos campos',
+            confirmButtonColor: '#f59e0b',
+        });
+        return;
+    }
+
+    // Enviar
+    try {
+        Swal.fire({
+            title: 'Guardando...',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        const r = await fetch('/user/perfil/pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}',
+            },
+            body: JSON.stringify({ pin: pin, pin_confirm: pinConfirm }),
+        });
+        const data = await r.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'PIN guardado',
+                text: 'Ya puedes usar este PIN para cancelar ventas',
+                confirmButtonColor: '#10b981',
+                timer: 2000,
+                timerProgressBar: true,
+            }).then(() => location.reload());
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'No se pudo guardar el PIN',
+                confirmButtonColor: '#dc2626',
+            });
+        }
+    } catch (e) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexion',
+            text: e.message,
+        });
+    }
+}
+
+</script>
+
+    <script src="{{ url_for('static', filename='js/animaciones.js') }}" defer></script>
+</body>
+</html>

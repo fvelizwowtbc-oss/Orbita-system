@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% block title %}Facturas de Proveedores{% endblock %}
+{% block page_title %}Facturas de Proveedores{% endblock %}
+{% block page_subtitle %}{{ facturas|length }} factura{% if facturas|length != 1 %}s{% endif %}{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block header_actions %}
+<button onclick="abrirModalFacturaProv()" class="bg-[#1CA7EC] hover:bg-[#1892d4] text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+    <i class="fas fa-plus mr-1"></i> Nueva Factura
+</button>
+{% endblock %}
+
+{% block content %}
+
+<!-- Alertas de vencimiento -->
+{% set por_vencer = facturas|selectattr('por_vencer')|list %}
+{% set vencidas = facturas|selectattr('vencida')|list %}
+{% if por_vencer or vencidas %}
+<div class="mb-6 space-y-2">
+    {% if vencidas %}
+    <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            <div>
+                <p class="font-semibold text-red-800">{{ vencidas|length }} factura{% if vencidas|length != 1 %}s{% endif %} VENCIDA{% if vencidas|length != 1 %}S{% endif %}</p>
+                <p class="text-sm text-red-700">Total: ${{ "%.2f"|format(total_vencidas) }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if por_vencer %}
+    <div class="bg-amber-50 border-l-4 border-amber-500 rounded-lg p-4">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-clock text-amber-600 text-xl"></i>
+            <div>
+                <p class="font-semibold text-amber-800">{{ por_vencer|length }} factura{% if por_vencer|length != 1 %}s{% endif %} por vencer en los proximos 3 dias</p>
+                <p class="text-sm text-amber-700">Total: ${{ "%.2f"|format(total_por_vencer) }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <p class="text-xs font-medium text-slate-500 uppercase">Total pendiente</p>
+        <p class="text-2xl font-bold text-amber-600 mt-1">${{ "%.2f"|format(total_pendiente) }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <p class="text-xs font-medium text-slate-500 uppercase">Total pagado</p>
+        <p class="text-2xl font-bold text-emerald-600 mt-1">${{ "%.2f"|format(total_pagado) }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+        <p class="text-xs font-medium text-slate-500 uppercase">Total vencidas</p>
+        <p class="text-2xl font-bold text-red-600 mt-1">${{ "%.2f"|format(total_vencidas) }}</p>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6">
+    <form method="GET" class="flex gap-2 flex-wrap">
+        <select name="estado" class="px-4 py-2 border rounded-lg text-sm">
+            <option value="todas" {% if filtro_estado == 'todas' %}selected{% endif %}>Todas</option>
+            <option value="pendiente" {% if filtro_estado == 'pendiente' %}selected{% endif %}>Pendientes</option>
+            <option value="por_vencer" {% if filtro_estado == 'por_vencer' %}selected{% endif %}>Por vencer</option>
+            <option value="vencida" {% if filtro_estado == 'vencida' %}selected{% endif %}>Vencidas</option>
+            <option value="pagada" {% if filtro_estado == 'pagada' %}selected{% endif %}>Pagadas</option>
+        </select>
+        <select name="tipo" class="px-4 py-2 border rounded-lg text-sm">
+            <option value="todos" {% if filtro_tipo == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="contado" {% if filtro_tipo == 'contado' %}selected{% endif %}>Contado</option>
+            <option value="credito" {% if filtro_tipo == 'credito' %}selected{% endif %}>Credito</option>
+        </select>
+        <input type="text" name="buscar" value="{{ filtro_buscar }}" placeholder="Buscar proveedor o nro..."
+               class="flex-1 min-w-[200px] px-4 py-2 border rounded-lg text-sm">
+        <button type="submit" class="px-6 py-2 bg-[#1CA7EC] text-white rounded-lg text-sm">
+            <i class="fas fa-search mr-1"></i> Filtrar
+        </button>
+        <a href="{{ url_for('user.proveedores_facturas') }}" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm">
+            <i class="fas fa-times"></i>
+        </a>
+    </form>
+</div>
+
+<!-- Listado -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    {% if facturas %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Proveedor</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Nro Factura</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Emision</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Vencimiento</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Tipo</th>
+                    <th class="text-right px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Monto</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Estado</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold text-slate-600 uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for f in facturas %}
+                <tr class="hover:bg-slate-50 {% if f.estado_visual == 'vencida' %}bg-red-50{% elif f.estado_visual == 'por_vencer' %}bg-amber-50{% endif %}">
+                    <td class="px-4 py-3">
+                        <p class="font-medium text-slate-800">{{ f.proveedor_nombre }}</p>
+                        {% if f.proveedor_rif %}<p class="text-xs text-slate-500">{{ f.proveedor_rif }}</p>{% endif %}
+                    </td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ f.nro_factura or '-' }}</td>
+                    <td class="px-4 py-3 text-slate-600 text-xs">{{ f.fecha_emision.strftime('%d/%m/%Y') if f.fecha_emision else '-' }}</td>
+                    <td class="px-4 py-3 text-xs">
+                        {% if f.fecha_vencimiento %}
+                            <span class="text-slate-700">{{ f.fecha_vencimiento.strftime('%d/%m/%Y') }}</span>
+                            {% if f.estado == 'pendiente' %}
+                                {% set dias = f.dias_para_vencer %}
+                                {% if dias is not none %}
+                                    {% if dias < 0 %}
+                                        <p class="text-red-600 font-medium">{{ dias|abs }}d vencida</p>
+                                    {% elif dias == 0 %}
+                                        <p class="text-red-600 font-medium">Vence hoy</p>
+                                    {% elif dias <= 3 %}
+                                        <p class="text-amber-600 font-medium">En {{ dias }}d</p>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <span class="text-slate-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-1 rounded text-xs font-medium {% if f.tipo == 'contado' %}bg-blue-100 text-blue-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                            {{ f.tipo|capitalize }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right font-medium">${{ "%.2f"|format(f.monto_usd or 0) }}</td>
+                    <td class="px-4 py-3 text-center">
+                        {% if f.estado_visual == 'pagada' %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                                <i class="fas fa-check mr-1"></i> Pagada
+                            </span>
+                        {% elif f.estado_visual == 'vencida' %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Vencida
+                            </span>
+                        {% elif f.estado_visual == 'por_vencer' %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                <i class="fas fa-clock mr-1"></i> Por vencer
+                            </span>
+                        {% elif f.estado_visual == 'cancelada' %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-200 text-slate-600">
+                                Cancelada
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                <i class="fas fa-clock mr-1"></i> Pendiente
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                        {% if f.estado == 'pendiente' %}
+                        <button type="button" onclick="pagarFactura({{ f.id }}, '{{ f.proveedor_nombre }}', {{ f.monto_usd|float }})"
+                                class="text-emerald-600 hover:text-emerald-800 p-1" title="Marcar como pagada">
+                            <i class="fas fa-check-circle"></i>
+                        </button>
+                        {% endif %}
+                        <button type="button" onclick="eliminarFactura({{ f.id }})"
+                                class="text-red-600 hover:text-red-800 p-1 ml-1" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-truck text-slate-300 text-5xl mb-4"></i>
+        <p class="text-slate-500 mb-4">No hay facturas de proveedores</p>
+        <button onclick="abrirModalFacturaProv()" class="bg-[#1CA7EC] text-white px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-plus mr-1"></i> Registrar primera factura
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Nueva Factura -->
+<div id="modalFacturaProv" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+            <h3 class="font-bold text-lg">Nueva Factura de Proveedor</h3>
+            <button onclick="cerrarModalFacturaProv()" class="text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ url_for('user.proveedores_crear') }}" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Proveedor *</label>
+                    <input type="text" name="proveedor_nombre" required class="w-full px-4 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">RIF</label>
+                    <input type="text" name="proveedor_rif" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Telefono</label>
+                    <input type="text" name="proveedor_telefono" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Nro Factura</label>
+                    <input type="text" name="nro_factura" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Monto USD *</label>
+                    <input type="number" step="0.01" name="monto_usd" required class="w-full px-4 py-2 border rounded-lg">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Tipo *</label>
+                    <select name="tipo" id="f_tipo_prov" required class="w-full px-4 py-2 border rounded-lg" onchange="toggleVencimiento()">
+                        <option value="contado">Contado</option>
+                        <option value="credito">Credito</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Metodo de pago</label>
+                    <select name="metodo_pago" class="w-full px-4 py-2 border rounded-lg">
+                        {% for key, label in metodos_pago %}
+                            <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Fecha emision</label>
+                    <input type="date" name="fecha_emision" id="f_fecha_emision" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+                <div id="campoVencimiento" class="hidden">
+                    <label class="block text-sm font-medium mb-1">Fecha vencimiento</label>
+                    <input type="date" name="fecha_vencimiento" class="w-full px-4 py-2 border rounded-lg">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Notas</label>
+                <textarea name="notas" rows="2" class="w-full px-4 py-2 border rounded-lg resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="cerrarModalFacturaProv()" class="flex-1 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 py-2.5 bg-[#1CA7EC] hover:bg-[#1892d4] text-white rounded-xl font-medium">
+                    <i class="fas fa-save mr-1"></i> Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalFacturaProv() {
+    document.getElementById('modalFacturaProv').classList.remove('hidden');
+    document.getElementById('f_fecha_emision').value = new Date().toISOString().slice(0, 10);
+    toggleVencimiento();
+}
+
+function cerrarModalFacturaProv() {
+    document.getElementById('modalFacturaProv').classList.add('hidden');
+}
+
+function toggleVencimiento() {
+    const tipo = document.getElementById('f_tipo_prov').value;
+    const campo = document.getElementById('campoVencimiento');
+    if (tipo === 'credito') {
+        campo.classList.remove('hidden');
+    } else {
+        campo.classList.add('hidden');
+    }
+}
+
+async function pagarFactura(id, proveedor, monto) {
+    const r = await Swal.fire({
+        title: 'Marcar como pagada?',
+        html: '<p style="font-size:14px;"><strong>' + proveedor + '</strong></p>' +
+              '<p style="font-size:18px;color:#10b981;font-weight:bold;margin-top:8px;">$' + monto.toFixed(2) + '</p>' +
+              '<p style="font-size:12px;color:#64748b;margin-top:8px;">Se registrara automaticamente como gasto</p>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Si, pagar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+    });
+
+    if (!r.isConfirmed) return;
+
+    try {
+        const resp = await fetch('/user/proveedores/facturas/' + id + '/pagar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}',
+            },
+            body: JSON.stringify({ metodo_pago: 'efectivo' }),
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            Swal.fire({ icon: 'success', title: 'Factura pagada', timer: 1500, showConfirmButton: false })
+                .then(() => location.reload());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+        }
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+    }
+}
+
+async function eliminarFactura(id) {
+    const r = await Swal.fire({
+        title: 'Eliminar factura?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Si, eliminar',
+        cancelButtonText: 'Cancelar',
+    });
+
+    if (!r.isConfirmed) return;
+
+    try {
+        const resp = await fetch('/user/proveedores/facturas/' + id + '/eliminar', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}' },
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            Swal.fire({ icon: 'success', title: 'Eliminada', timer: 1500, showConfirmButton: false })
+                .then(() => location.reload());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+        }
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarModalFacturaProv();
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}{{ vendedor.nombre }}{% endblock %}
+{% block page_title %}{{ vendedor.nombre }}{% endblock %}
+{% block page_subtitle %}{{ vendedor.email }}{% endblock %}
+{% block sidebar %}{% include 'vip/_sidebar.html' %}{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('vip.lista') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Volver
+</a>
+<a href="{{ url_for('vip.editar', vendedor_id=vendedor.id) }}" class="btn btn-primary">
+    <i class="fas fa-edit"></i> Editar
+</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header con avatar -->
+<div class="bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] rounded-2xl p-6 mb-6 text-white">
+    <div class="flex items-center gap-4">
+        <div class="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-3xl">
+            {{ vendedor.nombre[0] | upper }}
+        </div>
+        <div>
+            <h2 class="text-2xl font-bold">{{ vendedor.nombre }}</h2>
+            <p class="text-white/80">{{ vendedor.email }}</p>
+            {% if vendedor.telefono %}
+            <p class="text-white/70 text-sm mt-1"><i class="fas fa-phone mr-1"></i>{{ vendedor.telefono }}</p>
+            {% endif %}
+        </div>
+        <div class="ml-auto text-right">
+            {% if vendedor.activo %}
+            <span class="badge bg-emerald-400/30 text-white border border-white/30">
+                <i class="fas fa-circle text-[8px]"></i> Activo
+            </span>
+            {% else %}
+            <span class="badge bg-white/20 text-white/70 border border-white/20">
+                <i class="fas fa-circle text-[8px]"></i> Inactivo
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Stats del vendedor -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-slate-200 p-5">
+        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Ventas hoy</p>
+        <p class="text-2xl font-bold text-slate-900">{{ stats.ventas_hoy }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-5">
+        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Total hoy</p>
+        <p class="text-2xl font-bold text-emerald-600">${{ "%.2f"|format(stats.total_hoy_usd) }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-5">
+        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Ventas mes</p>
+        <p class="text-2xl font-bold text-slate-900">{{ stats.ventas_mes }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-5">
+        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Total mes</p>
+        <p class="text-2xl font-bold text-emerald-600">${{ "%.2f"|format(stats.total_mes_usd) }}</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Permisos actuales -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6">
+        <h3 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fas fa-shield-alt text-[#787FF6]"></i>
+            Permisos
+        </h3>
+        
+        <div class="space-y-2">
+            <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                <span class="text-sm text-slate-700">Editar inventario</span>
+                <span class="badge {% if config and config.puede_editar_inventario %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    {% if config and config.puede_editar_inventario %}Sí{% else %}No{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                <span class="text-sm text-slate-700">Ver clientes</span>
+                <span class="badge {% if config and config.puede_ver_clientes %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    {% if config and config.puede_ver_clientes %}Sí{% else %}No{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                <span class="text-sm text-slate-700">Ver facturas</span>
+                <span class="badge {% if config and config.puede_ver_facturas %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    {% if config and config.puede_ver_facturas %}Sí{% else %}No{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                <span class="text-sm text-slate-700">Reportes completos</span>
+                <span class="badge {% if config and config.puede_ver_reportes_completos %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    {% if config and config.puede_ver_reportes_completos %}Sí{% else %}No{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                <span class="text-sm text-slate-700">Cancelar ventas</span>
+                <span class="badge {% if config and config.puede_cancelar_ventas %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    {% if config and config.puede_cancelar_ventas %}Sí{% else %}No{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center justify-between py-2">
+                <span class="text-sm text-slate-700">Ver costos</span>
+                <span class="badge {% if config and config.puede_ver_costos %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-500{% endif %}">
+                    {% if config and config.puede_ver_costos %}Sí{% else %}No{% endif %}
+                </span>
+            </div>
+        </div>
+        
+        {% if config and config.notas %}
+        <div class="mt-4 p-3 bg-slate-50 rounded-lg">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Notas</p>
+            <p class="text-sm text-slate-700">{{ config.notas }}</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Ventas recientes -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100">
+            <h3 class="font-bold text-slate-900 flex items-center gap-2">
+                <i class="fas fa-shopping-cart text-[#1CA7EC]"></i>
+                Ventas recientes
+            </h3>
+        </div>
+        
+        {% if ventas %}
+        <div class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+            {% for v in ventas %}
+            <div class="px-6 py-3 hover:bg-slate-50 flex items-center justify-between">
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-sm text-slate-900 truncate">
+                        {{ v.producto.nombre if v.producto else 'Producto' }}
+                    </p>
+                    <div class="flex items-center gap-3 mt-0.5">
+                        <span class="text-xs text-slate-500">{{ v.nro_factura or '-' }}</span>
+                        <span class="text-xs text-slate-400">{{ v.creado_en.strftime('%d/%m %H:%M') if v.creado_en else '' }}</span>
+                    </div>
+                </div>
+                <div class="text-right flex-shrink-0 ml-4">
+                    <p class="font-bold text-emerald-600">${{ "%.2f"|format(v.total_usd or 0) }}</p>
+                    <p class="text-xs text-slate-400">x{{ v.cantidad }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-shopping-cart text-slate-300 text-3xl mb-2"></i>
+            <p class="text-slate-500 text-sm">Este vendedor no tiene ventas aún</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

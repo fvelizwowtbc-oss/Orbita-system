@@ -1,0 +1,53 @@
+<a href="{{ url_for('user.dashboard') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.dashboard' %}active{% endif %}">
+    <i class="fas fa-chart-line"></i>
+    <span>Dashboard</span>
+</a>
+
+<a href="{{ url_for('user.inventario') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.inventario' %}active{% endif %}">
+    <i class="fas fa-boxes"></i>
+    <span>Inventario</span>
+</a>
+
+<a href="{{ url_for('user.ventas') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.ventas' %}active{% endif %}">
+    <i class="fas fa-shopping-cart"></i>
+    <span>Ventas</span>
+</a>
+
+<a href="{{ url_for('user.facturas') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.facturas' %}active{% endif %}">
+    <i class="fas fa-file-invoice-dollar"></i>
+    <span>Facturas</span>
+</a>
+
+<a href="{{ url_for('user.cashea_listado') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.cashea_listado' %}active{% endif %}">
+    <i class="fas fa-hand-holding-usd"></i>
+    <span>Cashea</span>
+</a>
+
+<a href="{{ url_for('user.gastos_listado') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.gastos_listado' %}active{% endif %}">
+    <i class="fas fa-money-bill-wave"></i>
+    <span>Gastos</span>
+</a>
+
+<a href="{{ url_for('user.proveedores_facturas') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.proveedores_facturas' %}active{% endif %}">
+    <i class="fas fa-truck"></i>
+    <span>Proveedores</span>
+</a>
+
+<a href="{{ url_for('user.clientes') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.clientes' %}active{% endif %}">
+    <i class="fas fa-users"></i>
+    <span>Clientes</span>
+</a>
+
+<a href="{{ url_for('user.reportes') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.reportes' %}active{% endif %}">
+    <i class="fas fa-chart-bar"></i>
+    <span>Reportes</span>
+</a>
+
+{% if current_user.suscripcion_vigente %}
+<div class="sidebar-divider"></div>
+
+<a href="{{ url_for('vip.lista') }}" class="sidebar-link {% if request.endpoint and 'vip.' in request.endpoint %}active{% endif %}" title="Mis Vendedores">
+    <i class="fas fa-user-tie"></i>
+    <span>Mis Vendedores</span>
+</a>
+{% endif %}

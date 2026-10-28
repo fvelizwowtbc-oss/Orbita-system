@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Sistema de Gestión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { -webkit-font-smoothing: antialiased; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        .bg-pattern {
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(123, 213, 245, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(120, 127, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(74, 222, 222, 0.08) 0%, transparent 60%);
+        }
+        
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .float-slow { animation: floatSlow 6s ease-in-out infinite; }
+        .float-slower { animation: floatSlow 8s ease-in-out infinite reverse; }
+        
+        .input-field {
+            transition: all 0.2s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #1CA7EC;
+            box-shadow: 0 0 0 4px rgba(28, 167, 236, 0.12);
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #1CA7EC 0%, #787FF6 100%);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #4ADEDE 0%, #1CA7EC 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .btn-login:hover::before { opacity: 1; }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(28, 167, 236, 0.3); }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login span { position: relative; z-index: 1; }
+        
+        .card-login {
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-[#1F2F98] via-[#182580] to-[#121b60] min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    
+    <!-- Patrón de fondo decorativo -->
+    <div class="absolute inset-0 bg-pattern pointer-events-none"></div>
+    
+    <!-- Círculos decorativos flotantes -->
+    <div class="absolute top-20 left-20 w-72 h-72 bg-[#7BD5F5] rounded-full blur-3xl opacity-20 float-slow"></div>
+    <div class="absolute bottom-20 right-20 w-96 h-96 bg-[#787FF6] rounded-full blur-3xl opacity-15 float-slower"></div>
+    <div class="absolute top-1/2 left-1/3 w-64 h-64 bg-[#4ADEDE] rounded-full blur-3xl opacity-10 float-slow"></div>
+    
+    <!-- Card de login -->
+    <div class="w-full max-w-md relative z-10 card-login">
+        
+        <!-- Logo + título -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-60 h-60 bg-white/10 backdrop-blur-sm rounded-3xl mb-6 border border-white/20 shadow-2xl shadow-black/20">
+                <img src="{{ url_for('static', filename='logo.png') }}" 
+                     alt="Logo" 
+                     class="w-52 h-52 object-contain"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <i class="fas fa-cube text-white text-8xl hidden"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Orbita System</h1>
+            <p class="text-[#7BD5F5] text-sm">Administra tu negocio de forma inteligente</p>
+        </div>
+        
+        <!-- Card -->
+        <div class="bg-white rounded-3xl shadow-2xl p-8 backdrop-blur-sm">
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div class="mb-5 px-4 py-3 rounded-xl text-sm flex items-start gap-3
+                    {% if category == 'danger' %}bg-red-50 text-red-800 border border-red-200
+                    {% elif category == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200
+                    {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                    <i class="fas {% if category == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mt-0.5"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            {% endwith %}
+            
+            <form method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+                    <div class="relative">
+                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="email" name="email" required 
+                               class="input-field w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800"
+                               placeholder="tu@email.com">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Contraseña</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="password" name="password" required
+                               class="input-field w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-slate-800"
+                               placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-login w-full text-white font-semibold py-3.5 rounded-xl">
+                    <span><i class="fas fa-arrow-right-to-bracket mr-2"></i> Iniciar Sesión</span>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-sm text-slate-500">
+                    ¿No tienes cuenta?
+                    <a href="{{ url_for('auth.register') }}" 
+                       class="text-[#1CA7EC] hover:text-[#787FF6] font-semibold transition-colors">
+                        Regístrate aquí
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-6 space-y-2">
+            {% if ip_local %}
+            <div class="text-center">
+                <p class="text-xs text-[#7BD5F5]/70 inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full backdrop-blur-sm border border-white/10">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Acceso desde movil:</span>
+                    <code class="font-mono font-semibold text-[#1CA7EC]">{{ ip_local }}:{{ puerto_local }}</code>
+                </p>
+            </div>
+            {% endif %}
+            <p class="text-center text-xs text-[#7BD5F5]/60">
+                © {{ now.year if now else 2026 }} Orbita System · Todos los derechos reservados
+            </p>
+        </div>
+    </div>
+</body>
+</html>
