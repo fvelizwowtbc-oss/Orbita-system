@@ -901,11 +901,11 @@ def reportes():
     total_por_vencer = sum(float(f.monto_usd or 0) for f in facturas_por_vencer)
 
     ventas_por_mes = db.session.query(
-        db.func.strftime('%Y-%m', Venta.creado_en).label('mes'),
+        db.func.to_char(Venta.creado_en, 'YYYY-MM').label('mes'),
         db.func.count().label('cantidad'),
         db.func.coalesce(db.func.sum(Venta.total_usd), 0).label('total_usd'),
     ).filter(Venta.usuario_id == uid, Venta.estado != 'cancelada').group_by('mes').order_by(
-        db.func.strftime('%Y-%m', Venta.creado_en).desc()
+        db.func.to_char(Venta.creado_en, 'YYYY-MM').desc()
     ).limit(12).all()
     
     ventas_por_mes = [dict(r._mapping) for r in ventas_por_mes]

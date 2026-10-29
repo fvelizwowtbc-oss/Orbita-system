@@ -12,6 +12,12 @@
 (function () {
     'use strict';
 
+    // ⚠️ NO ejecutar en móvil (el auto-foco cierra el teclado)
+    if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+        console.log('[autofocus] Desactivado en móvil');
+        return;
+    }
+
     // ---------- Config ----------
     const INPUT_ID = 'buscadorProductos';
     const UMBRAL_ESCANER_MS = 50;      // teclas mas rapidas que esto = escaner

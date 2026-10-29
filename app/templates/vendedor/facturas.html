@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Facturas{% endblock %}
 {% block page_title %}Facturas{% endblock %}
 {% block page_subtitle %}{{ facturas|length }} factura{% if facturas|length != 1 %}s{% endif %}{% endblock %}
@@ -87,7 +87,7 @@
 </div>
 
 <!-- Modal: Ver Factura -->
-<div id="modalFactura" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+<div id="modalFactura" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col">
         <div class="px-6 py-4 border-b flex justify-between items-center bg-slate-50">
             <h3 class="font-bold">
@@ -110,7 +110,7 @@
 </div>
 
 <!-- Modal: Registrar Abono -->
-<div id="modalAbono" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+<div id="modalAbono" class="hidden fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-md">
         <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
             <div>
@@ -280,7 +280,7 @@ document.addEventListener('keydown', function(e) {
 <!-- ============================================================
      MODAL: Cancelar factura
      ============================================================ -->
-<div id="modalCancelarFactura" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+<div id="modalCancelarFactura" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
         <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-red-600 to-red-700 rounded-t-2xl flex justify-between items-center">
             <div>
