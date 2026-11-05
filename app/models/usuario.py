@@ -1,4 +1,4 @@
-# app/models/usuario.py
+﻿# app/models/usuario.py
 from datetime import datetime, date
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,7 +17,9 @@ class Usuario(UserMixin, db.Model):
     role = db.Column(db.String(20), default='user')
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     activo = db.Column(db.Boolean, default=True)
+    session_token = db.Column(db.String(200), unique=True, index=True, nullable=True)
     es_vendedor = db.Column(db.Boolean, default=False)
+    es_scanner = db.Column(db.Boolean, default=False) # ✅ Nuevo rol de scanner
     usuario_padre_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete='SET NULL'))
     
     # Permisos de vendedor
@@ -29,6 +31,7 @@ class Usuario(UserMixin, db.Model):
     puede_ver_costos = db.Column(db.Boolean, default=False)
     
     limite_productos = db.Column(db.Integer, default=50)
+    scanner_tiempo = db.Column(db.Integer, default=10) # ✅ Tiempo en segundos del scanner
     limite_ventas_mensuales = db.Column(db.Integer, default=20)
     tasa_activa = db.Column(db.String(20), default='oficial')
     suscripcion_activa = db.Column(db.Boolean, default=False)
@@ -165,6 +168,7 @@ class VendedorConfig(db.Model):
     vendedor_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete='CASCADE'),
                             nullable=False, unique=True, index=True)
     activo = db.Column(db.Boolean, default=True)
+    session_token = db.Column(db.String(200), unique=True, index=True, nullable=True)
     notas = db.Column(db.Text, default='')
     limite_ventas_dia = db.Column(db.Integer, default=0)
     

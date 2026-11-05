@@ -1,148 +1,297 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Sistema de Gestión</title>
+    <title>Registrarse - Orbita System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { -webkit-font-smoothing: antialiased; }
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f1f5f9; overflow-x: hidden; }
         
         .bg-pattern {
-            background-image: 
-                radial-gradient(circle at 20% 30%, rgba(123, 213, 245, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(120, 127, 246, 0.15) 0%, transparent 50%);
+            background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
         }
         
-        @keyframes floatSlow {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-        }
-        
-        .float-slow { animation: floatSlow 6s ease-in-out infinite; }
-        .float-slower { animation: floatSlow 8s ease-in-out infinite reverse; }
-        
-        .input-field { transition: all 0.2s ease; }
-        .input-field:focus {
-            outline: none;
-            border-color: #1CA7EC;
-            box-shadow: 0 0 0 4px rgba(28, 167, 236, 0.12);
-        }
-        
-        .btn-register {
-            background: linear-gradient(135deg, #1CA7EC 0%, #787FF6 100%);
-            transition: all 0.25s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-register::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, #4ADEDE 0%, #1CA7EC 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .btn-register:hover::before { opacity: 1; }
-        .btn-register:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(28, 167, 236, 0.3); }
-        .btn-register span { position: relative; z-index: 1; }
-        
-        .card-register { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideUp {
+        @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .anim-fade-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .anim-scale-in { animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .anim-slide-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .anim-slide-left { animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        
+        .input-dark { background-color: #1e293b; border: 1px solid #334155; color: #f1f5f9; transition: all 0.2s ease; }
+        .input-dark:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .input-dark::placeholder { color: #64748b; }
+        
+        .btn-primary-dark { background-color: #3b82f6; color: white; transition: all 0.2s ease; }
+        .btn-primary-dark:hover { background-color: #2563eb; transform: translateY(-2px); box-shadow: 0 8px 16px rgba(59,130,246,0.3); }
+        
+        .btn-secondary-dark { background-color: #1e293b; color: #f1f5f9; border: 1px solid #334155; transition: all 0.2s ease; }
+        .btn-secondary-dark:hover { background-color: #334155; border-color: #475569; }
+        
+        .btn-login-main { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .btn-register-main { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     </style>
 </head>
-<body class="bg-gradient-to-br from-[#1F2F98] via-[#182580] to-[#121b60] min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="min-h-screen flex items-center justify-center p-4 relative bg-pattern">
     
-    <div class="absolute inset-0 bg-pattern pointer-events-none"></div>
-    
-    <div class="absolute top-20 left-20 w-72 h-72 bg-[#7BD5F5] rounded-full blur-3xl opacity-20 float-slow"></div>
-    <div class="absolute bottom-20 right-20 w-96 h-96 bg-[#787FF6] rounded-full blur-3xl opacity-15 float-slower"></div>
-    
-    <div class="w-full max-w-md relative z-10 card-register">
+    <div class="w-full max-w-md relative z-10">
         
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl mb-5 border border-white/20 shadow-lg shadow-black/10">
-                <i class="fas fa-user-plus text-white text-3xl"></i>
+        <!-- Logo -->
+        <div class="text-center mb-8 anim-fade-up">
+            <div class="inline-flex items-center justify-center bg-[#1e293b]/50 rounded-[2.5rem] p-3 mb-4 border border-[#334155] shadow-2xl">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="w-64 h-64 md:w-72 md:h-72 object-contain drop-shadow-2xl" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <i class="fas fa-cube text-8xl text-blue-500 hidden"></i>
             </div>
-            <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Crear Cuenta</h1>
-            <p class="text-[#7BD5F5] text-sm">Comienza a gestionar tu negocio hoy mismo</p>
+            <h1 class="text-3xl font-bold tracking-tight mt-2">Orbita System</h1>
+            <p class="text-slate-400 text-sm mt-1">Administra tu negocio de forma inteligente</p>
         </div>
-        
-        <div class="bg-white rounded-3xl shadow-2xl p-8">
+
+        <!-- CONTENEDOR PRINCIPAL (cambia dinamicamente) -->
+        <div id="app-container" class="bg-[#1e293b] rounded-3xl shadow-2xl p-8 border border-[#334155] anim-scale-in">
             
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% for category, message in messages %}
-                <div class="mb-5 px-4 py-3 rounded-xl text-sm flex items-start gap-3 bg-red-50 text-red-800 border border-red-200">
-                    <i class="fas fa-exclamation-circle mt-0.5"></i>
-                    <span>{{ message }}</span>
-                </div>
-                {% endfor %}
-            {% endwith %}
-            
-            <form method="POST" class="space-y-4">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- VISTA 1: SELECCION (Inicial) -->
+            <div id="vista-seleccion" class="space-y-4">
+                <h2 class="text-xl font-bold text-center mb-6">Bienvenido</h2>
+                <p class="text-slate-400 text-center text-sm mb-6">Selecciona una opcion para continuar</p>
                 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Nombre completo</label>
-                    <div class="relative">
-                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" name="nombre" required 
-                               class="input-field w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl"
-                               placeholder="Juan Pérez">
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
-                    <div class="relative">
-                        <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="email" name="email" required 
-                               class="input-field w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl"
-                               placeholder="tu@email.com">
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Teléfono (opcional)</label>
-                    <div class="relative">
-                        <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="tel" name="telefono" 
-                               class="input-field w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl"
-                               placeholder="04141234567">
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Contraseña</label>
-                    <div class="relative">
-                        <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="password" name="password" required minlength="6"
-                               class="input-field w-full pl-11 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl"
-                               placeholder="Mínimo 6 caracteres">
-                    </div>
-                </div>
-                
-                <button type="submit" class="btn-register w-full text-white font-semibold py-3.5 rounded-xl mt-2">
-                    <span><i class="fas fa-user-plus mr-2"></i> Crear mi cuenta</span>
+                <button onclick="abrirLogin()" class="w-full text-white font-semibold py-4 rounded-xl btn-login-main transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+                    <i class="fas fa-arrow-right-to-bracket"></i> Iniciar Sesion
                 </button>
-            </form>
-            
-            <div class="mt-6 text-center">
-                <p class="text-sm text-slate-500">
-                    ¿Ya tienes cuenta?
-                    <a href="{{ url_for('auth.login') }}" 
-                       class="text-[#1CA7EC] hover:text-[#787FF6] font-semibold transition-colors">
-                        Inicia sesión
-                    </a>
-                </p>
+                
+                <button onclick="abrirRegistro()" class="w-full text-white font-semibold py-4 rounded-xl btn-register-main transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+                    <i class="fas fa-user-plus"></i> Registrarse
+                </button>
+                
+                <button onclick="abrirContacto()" class="w-full text-slate-300 font-medium py-3 rounded-xl btn-secondary-dark transition-all duration-200 flex items-center justify-center gap-2 mt-4">
+                    <i class="fas fa-envelope"></i> Contactanos
+                </button>
             </div>
+
+            <!-- VISTA 2: LOGIN -->
+            <div id="vista-login" class="hidden space-y-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Iniciar Sesion</h2>
+                    <button onclick="volverAlInicio()" class="text-slate-400 hover:text-white transition">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded-xl text-sm flex items-start gap-3
+                        {% if category == 'danger' %}bg-red-900/30 text-red-300 border border-red-800
+                        {% elif category == 'success' %}bg-emerald-900/30 text-emerald-300 border border-emerald-800
+                        {% else %}bg-blue-900/30 text-blue-300 border border-blue-800{% endif %}">
+                        <i class="fas {% if category == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mt-0.5"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                        <div class="relative">
+                            <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="email" name="email" required class="input-dark w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="tu@email.com">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Contrasena</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="password" name="password" required class="input-dark w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="••••••••">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] mt-2">
+                        Entrar
+                    </button>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <button onclick="abrirRegistro()" class="text-sm text-blue-400 hover:text-blue-300 transition">
+                        No tienes cuenta? Registrate aqui
+                    </button>
+                </div>
+            </div>
+
+            <!-- VISTA 3: REGISTRO -->
+            <div id="vista-registro" class="hidden space-y-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Registrarse</h2>
+                    <button onclick="volverAlInicio()" class="text-slate-400 hover:text-white transition">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                    <div class="mb-4 px-4 py-3 rounded-xl text-sm flex items-start gap-3
+                        {% if category == 'danger' %}bg-red-900/30 text-red-300 border border-red-800
+                        {% else %}bg-blue-900/30 text-blue-300 border border-blue-800{% endif %}">
+                        <i class="fas fa-info-circle mt-0.5"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('auth.register') }}" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Nombre completo</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="text" name="nombre" required class="input-dark w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="Juan Perez">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                        <div class="relative">
+                            <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="email" name="email" required class="input-dark w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="tu@email.com">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Telefono (opcional)</label>
+                        <div class="relative">
+                            <i class="fas fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="tel" name="telefono" class="input-dark w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="04141234567">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Contrasena</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="password" name="password" required minlength="6" class="input-dark w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="Minimo 6 caracteres">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] mt-2">
+                        Crear Cuenta
+                    </button>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <button onclick="abrirLogin()" class="text-sm text-blue-400 hover:text-blue-300 transition">
+                        Ya tienes cuenta? Inicia sesion
+                    </button>
+                </div>
+            </div>
+
+            <!-- VISTA 4: CONTACTO -->
+            <div id="vista-contacto" class="hidden space-y-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Contactanos</h2>
+                    <button onclick="volverAlInicio()" class="text-slate-400 hover:text-white transition">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="bg-[#0f172a] rounded-xl p-6 border border-[#334155] space-y-4">
+                    <p class="text-slate-300 text-sm text-center">Aqui puedes colocar tu informacion de contacto. Edita el archivo <code class="bg-[#1e293b] px-2 py-1 rounded text-blue-400">login.html</code> en la seccion "Contactanos" para cambiar estos datos.</p>
+                    
+                    <div class="space-y-3 mt-6">
+                        <div class="flex items-center gap-3 text-slate-300">
+                            <i class="fas fa-envelope text-blue-500 w-6"></i>
+                            <span>tu@email.com</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-slate-300">
+                            <i class="fas fa-phone text-blue-500 w-6"></i>
+                            <span>+58 412 1234567</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-slate-300">
+                            <i class="fas fa-map-marker-alt text-blue-500 w-6"></i>
+                            <span>Venezuela</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-slate-300">
+                            <i class="fab fa-whatsapp text-green-500 w-6"></i>
+                            <span>+58 412 1234567</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="volverAlInicio()" class="w-full text-slate-300 font-medium py-3 rounded-xl btn-secondary-dark transition-all duration-200 flex items-center justify-center gap-2 mt-4">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 text-center text-xs text-slate-600">
+            &copy; 2026 Orbita System
         </div>
     </div>
+
+    <script>
+        function abrirLogin() { document.getElementById('vista-seleccion').classList.add('hidden');
+            document.getElementById('vista-seleccion').classList.add('hidden');
+            document.getElementById('vista-registro').classList.add('hidden');
+            document.getElementById('vista-contacto').classList.add('hidden');
+            var loginDiv = document.getElementById('vista-login');
+            loginDiv.classList.remove('hidden', 'anim-fade-up');
+            void loginDiv.offsetWidth;
+            loginDiv.classList.add('anim-fade-up');
+        }
+
+        function abrirRegistro() { document.getElementById('vista-seleccion').classList.add('hidden');
+            document.getElementById('vista-seleccion').classList.add('hidden');
+            document.getElementById('vista-login').classList.add('hidden');
+            document.getElementById('vista-contacto').classList.add('hidden');
+            var regDiv = document.getElementById('vista-registro');
+            regDiv.classList.remove('hidden', 'anim-fade-up');
+            void regDiv.offsetWidth;
+            regDiv.classList.add('anim-fade-up');
+        }
+
+        function abrirContacto() { document.getElementById('vista-seleccion').classList.add('hidden');
+            document.getElementById('vista-seleccion').classList.add('hidden');
+            document.getElementById('vista-login').classList.add('hidden');
+            document.getElementById('vista-registro').classList.add('hidden');
+            var conDiv = document.getElementById('vista-contacto');
+            conDiv.classList.remove('hidden', 'anim-fade-up');
+            void conDiv.offsetWidth;
+            conDiv.classList.add('anim-fade-up');
+        }
+
+        function volverAlInicio() {
+            document.getElementById('vista-login').classList.add('hidden');
+            document.getElementById('vista-registro').classList.add('hidden');
+            document.getElementById('vista-contacto').classList.add('hidden');
+            var selDiv = document.getElementById('vista-seleccion');
+            selDiv.classList.remove('hidden');
+        }
+    </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        abrirRegistro();
+    });
+</script>
 </body>
 </html>

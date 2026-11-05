@@ -13,6 +13,7 @@ from ..models.venta import Venta
 from ..models.cliente import Cliente
 from ..models.factura import FacturaCobrar
 from ..models.config import ConfigEmpresa
+from ..models.caja import CajaTurno
 from ..services.tasas import TasasService
 from ..services.cashea import CasheaService
 from ..services.suscripciones import SuscripcionesService
@@ -402,8 +403,10 @@ def ventas():
             usuario_padre_id=uid, es_vendedor=True, activo=True
         ).order_by(Usuario.nombre).all()
 
+    caja_abierta = CajaTurno.query.filter_by(usuario_id=uid, estado='abierta').first()
     return render_template(
         'user/ventas.html',
+        caja_abierta=caja_abierta,
         productos=productos,
         ventas_recientes=ventas_recientes,
         stats=stats, stats_mes=stats_mes,
@@ -1966,3 +1969,124 @@ def cashea_pagar_cuota(cuota_id):
         return jsonify({'success': True})
     else:
         return jsonify({'success': False, 'error': error}), 400
+
+# ============================================================
+# CAJA (APERTURA Y CIERRE)
+# ============================================================
+@user_bp.route('/caja', methods=['GET', 'POST'])
+@login_required
+def caja():
+    uid = current_user.id
+    caja_abierta = CajaTurno.query.filter_by(usuario_id=uid, estado='abierta').first()
+    
+    if request.method == 'POST' and not caja_abierta:
+        try:
+            usd = float(request.form.get('saldo_inicial_usd', 0) or 0)
+            bs = float(request.form.get('saldo_inicial_bs', 0) or 0)
+            
+            nueva_caja = CajaTurno(
+                usuario_id=uid,
+                saldo_inicial_usd=usd,
+                saldo_inicial_bs=bs,
+                estado='abierta'
+            )
+            db.session.add(nueva_caja)
+            db.session.commit()
+            flash('Caja abierta correctamente.', 'success')
+            return redirect(url_for('user.caja'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al abrir caja: {e}', 'danger')
+
+    cierres = CajaTurno.query.filter_by(usuario_id=uid, estado='cerrada').order_by(CajaTurno.cerrada_en.desc()).limit(10).all()
+    
+    from ..services.tasas import TasasService
+    tasa_actual = TasasService.obtener_tasa_bcv()
+    return render_template('user/caja.html', caja_abierta=caja_abierta, cierres_anteriores=cierres, tasa_bcv=tasa_actual)
+
+@user_bp.route('/caja/cerrar', methods=['POST'])
+@login_required
+def cerrar_caja():
+    uid = current_user.id
+    caja = CajaTurno.query.filter_by(usuario_id=uid, estado='abierta').first()
+    
+    if caja:
+        caja.estado = 'cerrada'
+        caja.cerrada_en = datetime.utcnow()
+        
+        # Arqueo Z (Cálculo de faltantes/sobrantes)
+        caja.saldo_real_usd = float(request.form.get('saldo_real_usd', 0) or 0)
+        caja.saldo_real_bs = float(request.form.get('saldo_real_bs', 0) or 0)
+        
+        esperado_usd = float(caja.saldo_inicial_usd) + float(caja.total_ventas_efectivo_usd)
+        esperado_bs = float(caja.saldo_inicial_bs) + float(caja.total_ventas_efectivo_bs)
+        
+        caja.diferencia_usd = caja.saldo_real_usd - esperado_usd
+        caja.diferencia_bs = caja.saldo_real_bs - esperado_bs
+        
+        db.session.commit()
+        flash('Caja cerrada correctamente. Turno finalizado.', 'success')
+    else:
+        flash('No hay ninguna caja abierta para cerrar.', 'warning')
+        
+    return redirect(url_for('user.caja'))
+
+
+# ============================================================
+# SCANNER DE PRECIOS (MODO PASILLO)
+# ============================================================
+@user_bp.route('/scanner')
+@login_required
+def scanner():
+    return render_template('user/scanner.html', tiempo_scanner=current_user.scanner_tiempo or 10)
+
+@user_bp.route('/scanner/configurar', methods=['POST'])
+@login_required
+def configurar_scanner():
+    try:
+        tiempo = int(request.form.get('tiempo', 10))
+        current_user.scanner_tiempo = tiempo
+        db.session.commit()
+        flash('Tiempo de pantalla actualizado a ' + str(tiempo) + ' segundos.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al configurar el tiempo.', 'danger')
+    return redirect(url_for('user.scanner'))
+
+@user_bp.route('/scanner/buscar', methods=['POST'])
+@login_required
+def scanner_buscar():
+    data = request.get_json() or {}
+    codigo = data.get('codigo', '').strip()
+    
+    if not codigo:
+        return jsonify({'success': False, 'error': 'Código vacío'})
+        
+    # Buscar producto (por código exacto o nombre)
+    from ..models.producto import Producto, ProductoVariante
+    from ..services.tasas import TasasService
+    
+    producto = Producto.query.filter(
+        Producto.usuario_id == current_user.id,
+        Producto.activo.is_(True),
+        db.or_(Producto.codigo.ilike(codigo), Producto.nombre.ilike(f'%{codigo}%'))
+    ).first()
+    
+    if not producto:
+        return jsonify({'success': False, 'error': 'Producto no encontrado'})
+        
+    tasas = TasasService.obtener_tasas(current_user.id)
+    tasa_actual = float(tasas['oficial'])
+    
+    # Formatear precios
+    precio_usd = float(producto.precio_venta_usd)
+    precio_bs = precio_usd * tasa_actual
+    
+    return jsonify({
+        'success': True,
+        'nombre': producto.nombre,
+        'codigo': producto.codigo,
+        'precio_usd': precio_usd,
+        'precio_bs': precio_bs,
+        'tasa': tasa_actual
+    })

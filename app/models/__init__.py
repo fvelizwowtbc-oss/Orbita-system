@@ -9,9 +9,10 @@ from .factura_proveedor import FacturaProveedor
 from .factura import FacturaCobrar, Abono
 from .suscripcion import Suscripcion
 from .config import ConfigEmpresa, ConfigTasa
+from .caja import CajaTurno
 
 __all__ = [
     'Usuario', 'VendedorConfig', 'Producto', 'ProductoVariante', 'Cliente', 'Venta',
     'FacturaCobrar', 'Abono', 'Suscripcion',
-    'ConfigEmpresa', 'ConfigTasa',
+    'ConfigEmpresa', 'ConfigTasa', 'CajaTurno',
 ]

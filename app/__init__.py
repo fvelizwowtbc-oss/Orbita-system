@@ -131,6 +131,7 @@ def _register_blueprints(app):
     from .routes.admin import admin_bp
     from .routes.vendedor import vendedor_bp
     from .routes.vip import vip_bp
+    from .routes.scanner import scanner_bp
     from .routes.api import api_bp
 
     app.register_blueprint(auth_bp)
@@ -138,6 +139,7 @@ def _register_blueprints(app):
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(vendedor_bp, url_prefix='/vendedor')
     app.register_blueprint(vip_bp, url_prefix='/vip')
+    app.register_blueprint(scanner_bp, url_prefix='/scanner')
     app.register_blueprint(api_bp, url_prefix='/api')
 
 

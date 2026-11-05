@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% block title %}Caja{% endblock %}
+{% block page_title %}Caja{% endblock %}
+{% block page_subtitle %}Control de efectivo y turnos{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="lg:col-span-2 space-y-6">
+        {% if not caja_abierta %}
+        <!-- FORMULARIO DE APERTURA -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200">
+                <h3 class="font-bold text-lg text-slate-800">Abrir caja</h3>
+                <p class="text-sm text-slate-500 mt-1">Indica el efectivo con que empiezas, en cada moneda.</p>
+            </div>
+            <form method="POST" class="p-6 space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Efectivo inicial (USD)</label>
+                    <input type="number" step="0.01" name="saldo_inicial_usd" value="0" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0f172a] outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Efectivo inicial (VES)</label>
+                    <input type="number" step="0.01" name="saldo_inicial_bs" value="0" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0f172a] outline-none transition">
+                </div>
+                <button type="submit" class="w-full mt-4 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-3 rounded-lg transition-colors text-lg">
+                    Abrir caja
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <!-- ESTADO DE CAJA ABIERTA -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-cash-register text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-slate-800 mb-2">Caja Abierta</h3>
+            <p class="text-slate-500 mb-6">Abierta el {{ caja_abierta.abierta_en.strftime('%d/%m/%Y a las %H:%M') }}</p>
+            
+            <div class="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <p class="text-xs text-slate-500 uppercase">Base Inicial USD</p>
+                    <p class="text-xl font-bold text-slate-800">${{ "%.2f"|format(caja_abierta.saldo_inicial_usd|float) }}</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <p class="text-xs text-slate-500 uppercase">Base Inicial Bs</p>
+                    <p class="text-xl font-bold text-slate-800">Bs. {{ "%.2f"|format(caja_abierta.saldo_inicial_bs|float) }}</p>
+                </div>
+            </div>
+
+            <button type="button" onclick="document.getElementById('modalArqueo').classList.remove('hidden')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors shadow-lg shadow-red-500/30">
+                <i class="fas fa-lock mr-2"></i> Cerrar caja (Arqueo Z)
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- COLUMNA DERECHA: CIERRES ANTERIORES -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div class="px-5 py-4 border-b border-slate-200">
+            <h3 class="font-bold text-slate-800">Cierres anteriores</h3>
+        </div>
+        <div class="p-5">
+            {% if cierres_anteriores %}
+            <div class="space-y-3">
+                {% for cierre in cierres_anteriores %}
+                <div class="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm bg-white">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-2">
+                        <p class="text-sm font-bold text-slate-800"><i class="far fa-calendar-alt text-slate-400 mr-1"></i> {{ cierre.cerrada_en.strftime('%d/%m/%Y') }}</p>
+                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Tasa: {{ "%.2f"|format(cierre.tasa_cierre|float or 0) }}</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                        <div class="bg-blue-50 p-2 rounded border border-blue-100">
+                            <p class="text-blue-800 font-semibold mb-0.5">Dólares (USD)</p>
+                            <p class="text-slate-700">${{ "%.2f"|format(cierre.saldo_real_usd|float or 0) }}</p>
+                        </div>
+                        <div class="bg-amber-50 p-2 rounded border border-amber-100">
+                            <p class="text-amber-800 font-semibold mb-0.5">Bolívares (Bs)</p>
+                            <p class="text-slate-700">Bs. {{ "%.2f"|format(cierre.saldo_real_bs|float or 0) }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs mt-2 pt-2 border-t border-slate-100">
+                        <span class="text-slate-500 font-medium">Diferencia Total:</span>
+                        <div class="text-right">
+                            <span class="font-bold block {% if (cierre.diferencia_usd|float or 0) < 0 %}text-red-600{% else %}text-emerald-600{% endif %}">
+                                ${{ "%.2f"|format(cierre.diferencia_usd|float or 0) }}
+                            </span>
+                            <span class="text-[10px] font-medium text-slate-500 block">
+                                Bs. {{ "%.2f"|format((cierre.diferencia_usd|float or 0) * (tasa_bcv|default(50)|float or cierre.tasa_cierre|float or 0)) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-10 text-slate-400">
+                <p class="text-sm">Aún no hay cierres</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if caja_abierta %}
+<!-- MODAL DE ARQUEO Z -->
+<div id="modalArqueo" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 bg-[#0f172a] rounded-t-2xl">
+            <h3 class="text-white font-bold text-lg"><i class="fas fa-calculator mr-2"></i> Arqueo Z (Cierre)</h3>
+        </div>
+        <form method="POST" action="{{ url_for('user.cerrar_caja') }}" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4 text-sm text-slate-600 space-y-1">
+                <p><i class="fas fa-lock text-slate-400 w-4"></i> <strong>Base de Apertura:</strong> ${{ "%.2f"|format(caja_abierta.saldo_inicial_usd|float) }} + Bs. {{ "%.2f"|format(caja_abierta.saldo_inicial_bs|float) }}</p>
+                <p><i class="fas fa-shopping-cart text-slate-400 w-4"></i> <strong>Ventas en Efectivo:</strong> ${{ "%.2f"|format(caja_abierta.total_ventas_efectivo_usd|float) }} + Bs. {{ "%.2f"|format(caja_abierta.total_ventas_efectivo_bs|float) }}</p>
+                <div class="border-t border-slate-200 mt-2 pt-2">
+                    <p><i class="fas fa-calculator text-slate-400 w-4"></i> <strong>Total Esperado en Gaveta:</strong> ${{ "%.2f"|format((caja_abierta.saldo_inicial_usd|float) + (caja_abierta.total_ventas_efectivo_usd|float)) }} + Bs. {{ "%.2f"|format((caja_abierta.saldo_inicial_bs|float) + (caja_abierta.total_ventas_efectivo_bs|float)) }}</p>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium mb-1">Dólares (USD)</label>
+                <input type="number" step="0.01" name="saldo_real_usd" id="saldo_real_usd" value="0" placeholder="0.00" oninput="calcularBs()" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0f172a]">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Bolívares (Bs)</label>
+                <input type="number" step="0.01" name="saldo_real_bs" id="saldo_real_bs" value="0" placeholder="0.00" oninput="calcularUsd()" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0f172a]">
+            </div>
+            
+            <!-- Diferencia en vivo -->
+            <div id="resultadoDiferencia" class="hidden mt-4 p-3 rounded-lg border flex justify-between items-center transition-colors">
+                <span class="font-bold text-sm">Diferencia Total:</span>
+                <div class="text-right">
+                    <span id="difUsd" class="font-bold block text-lg">$0.00</span>
+                    <span id="difBs" class="text-xs block opacity-80">Bs. 0.00</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-4">
+                <button type="button" onclick="document.getElementById('modalArqueo').classList.add('hidden')" class="flex-1 py-2 border rounded-lg text-slate-600 hover:bg-slate-50 font-medium">Cancelar</button>
+                <button type="submit" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold">Confirmar Cierre</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Script del conversor automático -->
+<script>
+    // Obtenemos la tasa BCV desde el backend
+    const TASA_CALCULO = {{ tasas.oficial if tasas and tasas.oficial else 50 }};
+    
+    function calcularBs() {
+        const usdInput = document.getElementById('saldo_real_usd');
+        const bsInput = document.getElementById('saldo_real_bs');
+        const usd = parseFloat(usdInput.value) || 0;
+        
+        if (usd > 0) {
+            bsInput.value = (usd * TASA_CALCULO).toFixed(2);
+        } else {
+            bsInput.value = '0';
+        }
+        calcularDiferencia();
+    }
+
+    function calcularUsd() {
+        const usdInput = document.getElementById('saldo_real_usd');
+        const bsInput = document.getElementById('saldo_real_bs');
+        const bs = parseFloat(bsInput.value) || 0;
+        
+        if (bs > 0) {
+            usdInput.value = (bs / TASA_CALCULO).toFixed(2);
+        } else {
+            usdInput.value = '0';
+        }
+        calcularDiferencia();
+    }
+
+    // Función para calcular y mostrar la diferencia en tiempo real
+    function calcularDiferencia() {
+        const realUsd = parseFloat(document.getElementById('saldo_real_usd').value) || 0;
+        const realBs = parseFloat(document.getElementById('saldo_real_bs').value) || 0;
+        
+        // Datos esperados desde el servidor (Base + Ventas)
+        const baseUsd = {{ caja_abierta.saldo_inicial_usd|float if caja_abierta else 0 }};
+        const baseBs = {{ caja_abierta.saldo_inicial_bs|float if caja_abierta else 0 }};
+        const ventasUsd = {{ caja_abierta.total_ventas_efectivo_usd|float if caja_abierta else 0 }};
+        const ventasBs = {{ caja_abierta.total_ventas_efectivo_bs|float if caja_abierta else 0 }};
+
+        // Convertir todo a USD
+        const totalFisicoUsd = realUsd + (realBs / TASA_CALCULO);
+        const totalBaseUsd = baseUsd + (baseBs / TASA_CALCULO);
+        const totalVentasUsd = ventasUsd + (ventasBs / TASA_CALCULO);
+
+        // Fórmula: (Físico - Base) - Ventas
+        const efectivoNeto = totalFisicoUsd - totalBaseUsd;
+        const diferenciaUsd = efectivoNeto - totalVentasUsd;
+        const diferenciaBs = diferenciaUsd * TASA_CALCULO;
+
+        // Mostrar en el HTML
+        const divRes = document.getElementById('resultadoDiferencia');
+        const spanUsd = document.getElementById('difUsd');
+        const spanBs = document.getElementById('difBs');
+
+        divRes.classList.remove('hidden');
+        
+        spanUsd.textContent = '$' + diferenciaUsd.toFixed(2);
+        // Si la diferencia es 0 por la tolerancia, forzar a 0
+        const difBsFinal = (Math.abs(diferenciaUsd) < 0.10) ? 0 : diferenciaBs;
+        spanBs.textContent = 'Bs. ' + difBsFinal.toFixed(2);
+
+        if (diferenciaUsd < 0) {
+            divRes.className = 'mt-4 p-3 rounded-lg border flex justify-between items-center bg-red-50 border-red-200 text-red-700';
+        } else if (diferenciaUsd > 0) {
+            divRes.className = 'mt-4 p-3 rounded-lg border flex justify-between items-center bg-blue-50 border-blue-200 text-blue-700';
+        } else {
+            divRes.className = 'mt-4 p-3 rounded-lg border flex justify-between items-center bg-emerald-50 border-emerald-200 text-emerald-700';
+        }
+    }
+
+    // Llamar a calcularDiferencia al cargar la página por si acaso
+    document.addEventListener('DOMContentLoaded', () => {
+        calcularDiferencia();
+    });
+</script>
+{% endif %}
+{% endblock %}

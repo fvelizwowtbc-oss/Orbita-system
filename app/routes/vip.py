@@ -161,3 +161,44 @@ def eliminar(vendedor_id):
     else:
         flash(err, 'danger')
     return redirect(url_for('vip.lista'))
+
+
+# ============================================================
+# GESTIÓN DE SCANNERS (VIP)
+# ============================================================
+from ..services.scanners import ScannerService
+
+@vip_bp.route('/scanners')
+@login_required
+def scanners_lista():
+    if not _check_acceso(): return redirect(url_for('user.dashboard'))
+    scanners = ScannerService.listar(current_user.id)
+    return render_template('vip/scanners.html', scanners=scanners)
+
+@vip_bp.route('/scanners/crear', methods=['POST'])
+@login_required
+def scanners_crear():
+    if not _check_acceso(): return redirect(url_for('user.dashboard'))
+    
+    nombre = request.form.get('nombre')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    
+    scanner, err = ScannerService.crear(current_user.id, nombre, email, password)
+    if err:
+        flash(err, 'danger')
+    else:
+        flash(f'Scanner "{nombre}" creado exitosamente.', 'success')
+    return redirect(url_for('vip.scanners_lista'))
+
+@vip_bp.route('/scanners/<int:scanner_id>/eliminar', methods=['POST'])
+@login_required
+def scanners_eliminar(scanner_id):
+    if not _check_acceso(): return redirect(url_for('user.dashboard'))
+    
+    ok, err = ScannerService.eliminar(scanner_id, current_user.id)
+    if ok:
+        flash('Scanner eliminado.', 'success')
+    else:
+        flash(err, 'danger')
+    return redirect(url_for('vip.scanners_lista'))

@@ -16,7 +16,7 @@
                        oninput="filtrarProductos()">
                 <button type="button" onclick="abrirEscanerVentas()"
                         title="Escanear codigo de barras"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg bg-[#1CA7EC] hover:bg-[#1892d4] text-white transition" data-ripple>
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg bg-[#0f172a] hover:bg-[#1e293b] text-white transition" data-ripple>
                     <i class="fas fa-camera"></i>
                 </button>
             </div>
@@ -56,7 +56,7 @@
                         {% endif %}
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="font-bold {% if tiene_variantes %}text-[#787FF6]{% else %}text-[#1CA7EC]{% endif %}">
+                        <span class="font-bold {% if tiene_variantes %}text-[#787FF6]{% else %}text-[#0f172a]{% endif %}">
                             ${{ "%.2f"|format(p.precio_venta_usd) }}
                         </span>
                         <span class="text-xs text-slate-500">Stock: {{ p.stock_actual }}</span>
@@ -75,7 +75,7 @@
     <div class="space-y-4">
         
         <!-- BLOQUE DEL TOTAL GIGANTE -->
-        <div id="bloqueTotal" class="bg-gradient-to-br from-[#1F2F98] via-[#1a5fbb] to-[#1CA7EC] rounded-2xl p-5 text-white text-center shadow-lg shadow-blue-500/20 sticky top-4 z-20 transition-all duration-300">
+        <div id="bloqueTotal" class="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-5 text-white text-center shadow-lg shadow-slate-900/30 sticky top-4 z-20 transition-all duration-300">
             <div class="flex items-baseline justify-center gap-1 mb-2">
                 <span class="text-4xl md:text-5xl font-bold tracking-tight" id="totalBs">0,00</span>
                 <span class="text-xl md:text-2xl font-semibold text-white/80">Bs</span>
@@ -92,9 +92,9 @@
         <div class="bg-white rounded-xl shadow-sm border sticky top-4">
             <div class="p-4 border-b flex items-center justify-between">
                 <h3 class="font-bold flex items-center gap-2">
-                    <i class="fas fa-shopping-cart text-[#1CA7EC]"></i>
+                    <i class="fas fa-shopping-cart text-[#0f172a]"></i>
                     <span>Carrito</span>
-                    <span id="contadorItems" class="text-xs px-2 py-0.5 rounded-full bg-[#e6f7ff] text-[#1CA7EC] font-semibold">0</span>
+                    <span id="contadorItems" class="text-xs px-2 py-0.5 rounded-full bg-[#e6f7ff] text-[#0f172a] font-semibold">0</span>
                 </h3>
                 <button onclick="vaciarCarrito()" class="text-xs text-red-600 hover:text-red-800 font-medium">
                     <i class="fas fa-trash mr-1"></i>Vaciar
@@ -292,7 +292,7 @@
 
             <!-- ✅ BOTÓN COBRAR (AHORA SÍ, DENTRO DE LA TARJETA Y AL FINAL) -->
             <button onclick="abrirModalPago()" id="btnProcesar"
-                    class="w-full bg-gradient-to-r from-[#1CA7EC] to-[#787FF6] hover:opacity-95 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none mt-2"
+                    class="w-full bg-gradient-to-r from-[#0f172a] to-[#1e293b] hover:opacity-95 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-slate-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none mt-2"
                     disabled>
                 <i class="fas fa-cash-register mr-2"></i> COBRAR
             </button>
@@ -302,9 +302,9 @@
 </div> <!-- FIN DEL GRID -->
 
 <!-- MODAL DE PAGO Y VUELTO -->
-<div id="modalPago" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+<div id="modalPago" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[95vh] overflow-y-auto">
-        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] rounded-t-2xl sticky top-0">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#0f172a] to-[#1e293b] rounded-t-2xl sticky top-0">
             <div class="flex justify-between items-center">
                 <div>
                     <h3 class="text-white font-bold text-lg flex items-center gap-2">
@@ -401,7 +401,7 @@
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </button>
             <button type="button" onclick="confirmarVenta()" id="btnConfirmarVenta"
-                    class="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:opacity-95 text-white font-semibold px-4 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20">
+                    class="flex-1 bg-gradient-to-r from-[#0f172a] to-[#1e293b] hover:opacity-95 text-white font-semibold px-4 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20">
                 <i class="fas fa-check mr-1"></i> Confirmar
             </button>
         </div>
@@ -409,7 +409,7 @@
 </div>
 
 <!-- MODAL: Elegir Variante -->
-<div id="modalElegirVariante" class="hidden fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+<div id="modalElegirVariante" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto modal-anim">
         <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
             <div>
@@ -438,7 +438,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/autofocus_scanner.js') }}" defer></script>
+<!-- <script src="{{ url_for('static', filename='js/autofocus_scanner.js') }}" defer></script> (deshabilitado por autofocus inteligente) -->
 <script src="{{ url_for('static', filename='vendor/sweetalert2.all.min.js') }}"></script>
 <script>
 function toastError(msg) {
@@ -459,6 +459,7 @@ function escapeHtml(str) {
 }
 const escapeAttr = escapeHtml;
 
+const CAJA_ABIERTA = {{ 'true' if caja_abierta else 'false' }};
 const TASA_BCV = {{ ((tasas.oficial if tasas and tasas.oficial else tasa_bcv) or 0)|float }};
 const TASA_FUENTE = "{{ (tasas.fuente_oficial if tasas else 'BCV') }}";
 const TASA_MODO = "{{ (tasas.modo_tasa if tasas else 'auto') }}";
@@ -534,7 +535,7 @@ function abrirModalVariante(productoId, nombreProducto) {
                         '<div class="flex items-center justify-between"><div class="flex items-center gap-3">' +
                         '<div class="w-10 h-10 rounded-lg ' + (disabled ? 'bg-slate-200' : 'bg-[#ede9fe]') + ' flex items-center justify-center"><i class="fas fa-tag ' + (disabled ? 'text-slate-400' : 'text-[#787FF6]') + '"></i></div>' +
                         '<div><p class="font-semibold ' + (disabled ? 'text-slate-400' : 'text-slate-800') + '">' + escapeHtml(v.nombre) + '</p>' + (v.codigo ? '<p class="text-xs text-slate-500">Cod: ' + escapeHtml(v.codigo) + '</p>' : '') + '</div></div>' +
-                        '<div class="text-right"><p class="font-bold ' + (disabled ? 'text-slate-400' : 'text-[#4ADEDE]') + '">$' + parseFloat(precio).toFixed(2) + '</p><p class="text-xs ' + (disabled ? 'text-red-500 font-semibold' : 'text-slate-500') + '">' + (disabled ? 'Agotado' : 'Stock: ' + stock) + '</p></div></div></button>';
+                        '<div class="text-right"><p class="font-bold ' + (disabled ? 'text-slate-400' : 'text-[#0f172a]') + '">$' + parseFloat(precio).toFixed(2) + '</p><p class="text-xs ' + (disabled ? 'text-red-500 font-semibold' : 'text-slate-500') + '">' + (disabled ? 'Agotado' : 'Stock: ' + stock) + '</p></div></div></button>';
                 });
                 cont.innerHTML = html;
             }
@@ -549,6 +550,13 @@ function elegirVariante(productoId, varianteId, stock, precio, nombreProducto, n
 function renderCarrito() {
     var cont = document.getElementById('carrito');
     if (!cont) return;
+    
+    // ✅ FIX: Guardar el foco ANTES de re-renderizar
+    var _activeEl = document.activeElement;
+    var _activeId = _activeEl ? _activeEl.id : null;
+    var _selStart = (_activeEl && _activeEl.selectionStart !== undefined) ? _activeEl.selectionStart : null;
+    var _selEnd = (_activeEl && _activeEl.selectionEnd !== undefined) ? _activeEl.selectionEnd : null;
+    
     var totalUsd = 0, totalItems = 0;
     carrito.forEach(function (item) { totalUsd += item.cantidad * item.precio_usd; totalItems += item.cantidad; });
     var totalBs = totalUsd * TASA_BCV;
@@ -582,7 +590,7 @@ function renderCarrito() {
             html += '<div class="flex items-start gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">' +
                 '<div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">' + escapeHtml(item.nombre) + '</p>' +
                 '<p class="text-xs text-slate-500 mt-0.5">$' + item.precio_usd.toFixed(2) + ' × ' + item.cantidad + '</p>' +
-                '<p class="text-xs font-semibold text-[#1CA7EC] mt-0.5">Bs. ' + subBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</p></div>' +
+                '<p class="text-xs font-semibold text-[#0f172a] mt-0.5">Bs. ' + subBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</p></div>' +
                 '<div class="flex flex-col items-end gap-1"><button type="button" onclick="quitar(' + idx + ')" class="text-red-400 hover:text-red-600 text-xs" tabindex="-1"><i class="fas fa-times"></i></button>' +
                 '<div class="flex items-center gap-1"><button type="button" onclick="cambiarCantidad(' + idx + ', -1)" class="w-6 h-6 rounded bg-white border border-slate-200 text-xs hover:bg-slate-100" tabindex="-1">−</button>' +
                 '<input type="number" class="cantidad-input w-12 h-6 text-center border border-slate-300 rounded text-xs focus:ring-2 focus:ring-[#1CA7EC] outline-none" value="' + item.cantidad + '" min="1" max="' + item.stock + '" data-idx="' + idx + '" onchange="setCantidadCarrito(' + idx + ', this.value)" onkeydown="cantidadKeydown(event, ' + idx + ')" onfocus="this.select()">' +
@@ -592,6 +600,17 @@ function renderCarrito() {
     }
     if (document.getElementById('panelCashea') && !document.getElementById('panelCashea').classList.contains('hidden')) { actualizarPreviewCashea(); }
     if (typeof actualizarSaldoPendiente === 'function') actualizarSaldoPendiente();
+    
+    // ✅ FIX: Restaurar el foco si se perdio
+    if (_activeId) {
+        var _el2 = document.getElementById(_activeId);
+        if (_el2 && _el2 !== document.activeElement) {
+            _el2.focus();
+            if (_selStart !== null && _el2.setSelectionRange) {
+                try { _el2.setSelectionRange(_selStart, _selEnd); } catch(e) {}
+            }
+        }
+    }
 }
 
 function setCantidadCarrito(idx, valor) {
@@ -672,6 +691,19 @@ function actualizarSaldoPendiente() {
 }
 function calcularTotalCarrito() { var total = 0; carrito.forEach(function (item) { total += item.cantidad * item.precio_usd; }); return total; }
 
+// ✅ FIX: Helper de debounce para no re-renderizar en cada tecla
+function _debounce(fn, delay) {
+    var timer = null;
+    return function() {
+        var args = arguments;
+        var ctx = this;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function() {
+            fn.apply(ctx, args);
+        }, delay);
+    };
+}
+
 function toggleCashea() {
     var metodo = document.getElementById('metodoPago').value;
     var panel = document.getElementById('panelCashea');
@@ -704,6 +736,13 @@ function seleccionarTipoCashea(tipo) {
 function actualizarPreviewCashea() {
     var elInicial = document.getElementById('preview_inicial');
     if (!elInicial) return;
+    
+    // ✅ FIX: Guardar el foco ANTES de tocar el DOM
+    var _activeEl = document.activeElement;
+    var _activeId = _activeEl ? _activeEl.id : null;
+    var _selStart = (_activeEl && _activeEl.selectionStart !== undefined) ? _activeEl.selectionStart : null;
+    var _selEnd = (_activeEl && _activeEl.selectionEnd !== undefined) ? _activeEl.selectionEnd : null;
+    
     var totalUsd = calcularTotalCarrito();
     var tipoCashea = document.getElementById('cashea_tipo') ? document.getElementById('cashea_tipo').value : 'normal';
     var porcentaje = parseFloat(document.getElementById('cashea_porcentaje').value) || 0;
@@ -714,9 +753,21 @@ function actualizarPreviewCashea() {
     var label = (numCuotas === 1) ? '1 cuota de:' : (numCuotas + ' cuotas de:');
     document.getElementById('preview_cuotas_label').textContent = label;
     document.getElementById('preview_monto_cuota').textContent = '$' + montoCuota.toFixed(2);
+    
+    // ✅ FIX: Restaurar el foco si se perdio
+    if (_activeId) {
+        var _el = document.getElementById(_activeId);
+        if (_el && _el !== document.activeElement) {
+            _el.focus();
+            if (_selStart !== null && _el.setSelectionRange) {
+                try { _el.setSelectionRange(_selStart, _selEnd); } catch(e) {}
+            }
+        }
+    }
 }
 
 function abrirModalPago() {
+    if (!CAJA_ABIERTA) { return Swal.fire({ icon: 'warning', title: 'Caja Cerrada', text: 'Debes abrir la caja antes de cobrar.', confirmButtonColor: '#0f172a' }).then(() => window.location.href = '/user/caja'); }
     if (carrito.length === 0) { return Swal.fire({ icon: 'warning', title: 'Carrito vacío', text: 'Agrega productos antes de cobrar', confirmButtonColor: '#1CA7EC' }); }
     if (!TASA_BCV || TASA_BCV <= 0) { return Swal.fire({ icon: 'error', title: 'Tasa no disponible', text: 'No se puede cobrar sin tasa BCV válida', confirmButtonColor: '#dc2626' }); }
     var totalUsd = calcularTotalCarrito(); var totalBs = totalUsd * TASA_BCV;
@@ -769,6 +820,7 @@ function pagoRapido(tipo) {
 }
 
 async function confirmarVenta() {
+    if (!CAJA_ABIERTA) { return Swal.fire({ icon: 'warning', title: 'Caja Cerrada', text: 'Debes abrir la caja antes de cobrar.' }); }
     var totalUsd = calcularTotalCarrito(); var totalBs = totalUsd * TASA_BCV;
     var pagaUsd = parseFloat(document.getElementById('pagaUsd').value) || 0; var pagaBs = parseFloat(document.getElementById('pagaBs').value) || 0;
     var pagoTotalBs = (pagaUsd * TASA_BCV) + pagaBs;
@@ -791,6 +843,7 @@ async function confirmarVenta() {
 }
 
 async function procesarDirecto() {
+    if (!CAJA_ABIERTA) { return Swal.fire({ icon: 'warning', title: 'Caja Cerrada', text: 'Debes abrir la caja antes de cobrar.' }); }
     if (carrito.length === 0) { return Swal.fire({ icon: 'warning', title: 'Carrito vacío', text: 'Agrega productos antes de procesar' }); }
     if (!TASA_BCV || TASA_BCV <= 0) { return Swal.fire({ icon: 'error', title: 'Tasa no disponible', text: 'No se puede procesar sin tasa BCV válida' }); }
     var tipoVenta = document.getElementById('tipoVenta').value; var clienteSel = document.getElementById('clienteVenta'); var metodoPago = document.getElementById('metodoPago').value;
@@ -822,7 +875,7 @@ async function procesarDirecto() {
 
 async function imprimirTicketVenta(ventaId) {
     try {
-        Swal.fire({ title: 'Imprimiendo ticket...', html: '<i class="fas fa-print fa-2x text-[#1CA7EC]"></i><p style="font-size:12px;color:#64748b;margin-top:8px;">Enviando a POS-58</p>', allowOutsideClick: false, showConfirmButton: false, didOpen: function () { Swal.showLoading(); } });
+        Swal.fire({ title: 'Imprimiendo ticket...', html: '<i class="fas fa-print fa-2x text-[#0f172a]"></i><p style="font-size:12px;color:#64748b;margin-top:8px;">Enviando a POS-58</p>', allowOutsideClick: false, showConfirmButton: false, didOpen: function () { Swal.showLoading(); } });
         var r = await fetch('/user/ventas/' + ventaId + '/imprimir-ticket', { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
         var data = await r.json();
         if (data.success) { Swal.fire({ icon: 'success', title: 'Ticket impreso', text: 'Revisa la impresora', timer: 1500, showConfirmButton: false }).then(function () { location.reload(); }); }
@@ -862,4 +915,156 @@ function procesarCodigoVentas(codigo) {
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && _scannerAbiertoVentas) cerrarEscanerVentas(); });
 document.addEventListener('DOMContentLoaded', function () { var elTasa = document.getElementById('tasaActual'); if (elTasa) { elTasa.textContent = TASA_BCV.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2}); } renderCarrito(); });
 </script>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- AUTOFOCUS INTELIGENTE -->
+<!-- Solo enfoca el buscador si el usuario NO esta escribiendo  -->
+<!-- en otro campo (Cashea, cliente, cantidad, etc.)            -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    'use strict';
+    
+    // Campos donde el autofocus NO debe actuar
+    var CAMPOS_PROTEGIDOS = [
+        'cashea_nombre',
+        'cashea_cedula',
+        'cashea_telefono',
+        'cashea_porcentaje',
+        'cashea_cuotas',
+        'clienteVenta',
+        'metodoPago',
+        'montoInicial',
+        'montoInicialBs',
+        'buscadorProductos',  // el propio buscador
+        'pagaUsd',
+        'pagaBs',
+    ];
+    
+    // Tags donde NUNCA se debe robar el foco
+    var TAGS_PROTEGIDOS = ['INPUT', 'SELECT', 'TEXTAREA'];
+    
+    function _debeEnfocarBuscador() {
+        var el = document.activeElement;
+        
+        // Si no hay foco → SI enfocar
+        if (!el || el === document.body) {
+            return true;
+        }
+        
+        // Si el foco está en un campo protegido por ID → NO enfocar
+        if (el.id && CAMPOS_PROTEGIDOS.indexOf(el.id) !== -1) {
+            return false;
+        }
+        
+        // Si el foco está en CUALQUIER input/select/textarea → NO enfocar
+        // (a menos que ya sea el buscador)
+        if (TAGS_PROTEGIDOS.indexOf(el.tagName) !== -1) {
+            return false;
+        }
+        
+        // Si el foco está en un botón → NO enfocar
+        if (el.tagName === 'BUTTON') {
+            return false;
+        }
+        
+        // Si el foco está en un link → NO enfocar
+        if (el.tagName === 'A') {
+            return false;
+        }
+        
+        // Si el foco está en un modal abierto → NO enfocar
+        var modal = el.closest ? el.closest('.fixed.inset-0') : null;
+        if (modal) {
+            return false;
+        }
+        
+        // Cualquier otro caso raro → NO enfocar (ser conservador)
+        return false;
+    }
+    
+    function _enfocarBuscadorSiSeguro() {
+        if (!_debeEnfocarBuscador()) return;
+        
+        var buscador = document.getElementById('buscadorProductos');
+        if (!buscador) return;
+        if (document.activeElement === buscador) return;
+        
+        try {
+            buscador.focus();
+        } catch(e) {}
+    }
+    
+    // Exponer global
+    window._autofocusInteligente = {
+        activo: true,
+        enfocarSiSeguro: _enfocarBuscadorSiSeguro,
+        debeEnfocar: _debeEnfocarBuscador,
+    };
+    
+    // ============================================================
+    // AUTOFOCUS INICIAL (al cargar la pagina)
+    // ============================================================
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(_enfocarBuscadorSiSeguro, 300);
+        });
+    } else {
+        setTimeout(_enfocarBuscadorSiSeguro, 300);
+    }
+    
+    // ============================================================
+    // AUTOFOCUS por escaneo: si el usuario tipea y NO esta en un campo
+    // ============================================================
+    var _bufferScan = '';
+    var _timerScan = null;
+    
+    document.addEventListener('keydown', function(e) {
+        // Ignorar si el usuario esta en un campo protegido
+        if (!_debeEnfocarBuscador()) return;
+        
+        // Ignorar teclas de control
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key === 'Shift' || e.key === 'Tab' || e.key === 'Escape') return;
+        if (e.key.length !== 1) return;  // solo caracteres imprimibles
+        
+        // Estamos fuera de un campo → redirigir al buscador
+        var buscador = document.getElementById('buscadorProductos');
+        if (!buscador) return;
+        
+        // Enfocar y agregar el caracter
+        buscador.focus();
+        
+        // Dejar que el navegador procese el caracter normalmente
+        // (no llamar preventDefault)
+    }, true);  // capture=true para detectar ANTES que otros listeners
+    
+    // ============================================================
+    // TRUCO: al hacer click en el fondo, volver a enfocar buscador
+    // ============================================================
+    document.addEventListener('click', function(e) {
+        // Si el click fue en un elemento interactivo, no hacer nada
+        var t = e.target;
+        if (!t) return;
+        
+        // Si el click fue en input/select/textarea/button/a → no hacer nada
+        if (TAGS_PROTEGIDOS.indexOf(t.tagName) !== -1) return;
+        if (t.tagName === 'BUTTON' || t.tagName === 'A') return;
+        if (t.closest && t.closest('.fixed.inset-0')) return;  // modal
+        if (t.closest && t.closest('form')) return;
+        
+        // Si el click fue en un producto o en el fondo → reenfocar buscador
+        // (con un pequeño delay para no interferir con el click del producto)
+        setTimeout(function() {
+            if (document.activeElement === document.body || !document.activeElement) {
+                _enfocarBuscadorSiSeguro();
+            }
+        }, 50);
+    });
+    
+    console.log('[autofocus-inteligente] Instalado');
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════════ -->
+
 {% endblock %}

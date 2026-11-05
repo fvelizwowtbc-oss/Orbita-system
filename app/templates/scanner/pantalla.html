@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Precios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; overflow: hidden; }
+        
+        /* Animaciones */
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .anim-slide-up { animation: slideUp 0.4s ease-out forwards; }
+        
+        @keyframes scanPulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        .scanning-pulse { animation: scanPulse 2s infinite; }
+    </style>
+</head>
+<body class="h-screen flex flex-col relative bg-[#f0f4f8]">
+
+    <!-- HEADER -->
+    <header class="w-full bg-white border-b border-slate-200 py-4 px-8 flex justify-between items-center shadow-sm z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                <i class="fas fa-barcode text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800">Consulta de Precios</h1>
+        </div>
+        <div class="text-sm font-medium text-slate-400">
+            <i class="fas fa-globe mr-1"></i> Español
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 flex items-center justify-center p-8">
+        
+        <!-- ESTADO 1: BUSCADOR -->
+        <div id="searchState" class="w-full max-w-5xl bg-white rounded-3xl shadow-xl border border-slate-200 p-12 anim-slide-up">
+            <div class="flex flex-col items-center justify-center text-center">
+                <h2 class="text-3xl font-semibold text-slate-700 mb-8">Por favor, escanea el código de barras o QR del producto</h2>
+                
+                <!-- Caja de escaneo visual -->
+                <div class="relative w-64 h-64 border-4 border-dashed border-blue-400 rounded-2xl flex items-center justify-center bg-blue-50 scanning-pulse cursor-pointer transition-all hover:bg-blue-100" onclick="enfocarInput()">
+                    <i class="fas fa-qrcode text-8xl text-blue-300"></i>
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <span class="text-blue-600 font-medium">Haz clic aquí para simular escáner</span>
+                    </div>
+                </div>
+                
+                <!-- Input oculto (para que el lector de código escriba aquí) -->
+                <input type="text" id="inputScanner" autocomplete="off" class="opacity-0 absolute w-0 h-0" autofocus>
+                
+                <p class="text-slate-400 mt-8 text-lg">
+                    <i class="fas fa-info-circle mr-1"></i> El precio aparecerá en la pantalla automáticamente.
+                </p>
+            </div>
+        </div>
+
+        <!-- ESTADO 2: RESULTADO DEL PRODUCTO -->
+        <div id="resultState" class="hidden w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden anim-slide-up">
+            <div class="grid grid-cols-1 md:grid-cols-2">
+                
+                <!-- Columna Izquierda: Imagen simulada -->
+                <div class="bg-slate-50 flex items-center justify-center p-12 border-r border-slate-100 relative">
+                    <!-- Badge de éxito -->
+                    <div class="absolute top-6 left-6 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-check-circle"></i> Encontrado
+                    </div>
+                    
+                    <!-- Icono de producto (reemplazar por imagen real en el futuro) -->
+                    <div class="w-64 h-64 bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center">
+                        <i class="fas fa-box-open text-9xl text-slate-300"></i>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Información y Precio -->
+                <div class="p-12 flex flex-col justify-center relative">
+                    <!-- Código -->
+                    <p class="text-slate-400 font-mono text-sm mb-2" id="resCodigo">Cod: 00000</p>
+                    
+                    <!-- Nombre -->
+                    <h2 id="resNombre" class="text-4xl font-bold text-slate-800 leading-tight mb-8">Nombre del Producto</h2>
+                    
+                    <!-- Precios -->
+                    <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                        <div class="flex flex-col mb-2">
+                            <span class="text-sm text-slate-500 uppercase tracking-wider font-semibold">Precio de Venta</span>
+                            <span id="resPrecioBs" class="text-6xl font-extrabold text-blue-600">Bs. 0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t border-slate-200 pt-4 mt-2">
+                            <span class="text-slate-500 font-medium">Referencia en Dólares</span>
+                            <span id="resPrecioUsd" class="text-2xl font-bold text-slate-800">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer del Resultado -->
+            <div class="bg-slate-50 border-t border-slate-200 p-6 flex justify-between items-center text-slate-500 text-sm">
+                <button onclick="resetScanner()" class="flex items-center gap-2 hover:text-slate-800 transition font-medium">
+                    <i class="fas fa-arrow-left"></i> Volver a escanear
+                </button>
+                <div class="flex items-center gap-2" id="timerContainer">
+                    <i class="fas fa-clock"></i>
+                    <span>Volviendo en <strong id="segundosRestantes">{{ tiempo_scanner }}</strong> segundos</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const inputScanner = document.getElementById('inputScanner');
+        const searchState = document.getElementById('searchState');
+        const resultState = document.getElementById('resultState');
+        const timerContainer = document.getElementById('timerContainer');
+        const segundosRestantesEl = document.getElementById('segundosRestantes');
+        
+        const TIEMPO_ESPERA = {{ tiempo_scanner }};
+        let timerReset = null;
+        let timerIntervalo = null;
+
+        // Función para mantener el foco (invisible)
+        function enfocarInput() {
+            if (!resultState.classList.contains('hidden')) return;
+            inputScanner.focus();
+        }
+
+        // Evento para cuando el lector (o el usuario) presiona Enter
+        inputScanner.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const codigo = inputScanner.value.trim();
+                if (!codigo) return;
+                
+                inputScanner.value = ''; // Limpiar
+                
+                fetch('/scanner/buscar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ codigo: codigo })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarResultado(data);
+                    } else {
+                        // Si no se encuentra, vibrar o sonar
+                        try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch(e) {}
+                        document.querySelector('.border-blue-400').style.borderColor = '#ef4444';
+                        setTimeout(() => document.querySelector('.border-blue-400').style.borderColor = '#60a5fa', 1000);
+                        enfocarInput();
+                    }
+                })
+                .catch(err => {
+                    enfocarInput();
+                });
+            }
+        });
+
+        function mostrarResultado(data) {
+            try { new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg').play(); } catch(e) {}
+            
+            // Llenar datos
+            document.getElementById('resNombre').textContent = data.nombre;
+            document.getElementById('resCodigo').textContent = 'Cod: ' + data.codigo;
+            document.getElementById('resPrecioBs').textContent = 'Bs. ' + data.precio_bs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('resPrecioUsd').textContent = '$' + data.precio_usd.toFixed(2);
+            
+            // Transición visual
+            searchState.classList.add('hidden');
+            resultState.classList.remove('hidden');
+            
+            // Temporizador
+            let tiempoRestante = TIEMPO_ESPERA;
+            segundosRestantesEl.textContent = tiempoRestante;
+            timerContainer.classList.remove('hidden');
+            
+            clearInterval(timerIntervalo);
+            timerIntervalo = setInterval(() => {
+                tiempoRestante--;
+                segundosRestantesEl.textContent = tiempoRestante;
+                if (tiempoRestante <= 0) {
+                    clearInterval(timerIntervalo);
+                    resetScanner();
+                }
+            }, 1000);
+        }
+
+        function resetScanner() {
+            clearInterval(timerIntervalo);
+            clearTimeout(timerReset);
+            
+            resultState.classList.add('hidden');
+            searchState.classList.remove('hidden');
+            
+            inputScanner.value = '';
+            enfocarInput();
+        }
+
+        // Recuperar foco si se pierde
+        setInterval(enfocarInput, 1000);
+        setTimeout(enfocarInput, 500);
+    </script>
+</body>
+</html>

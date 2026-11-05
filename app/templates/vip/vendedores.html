@@ -1,8 +1,8 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Mis Vendedores{% endblock %}
 {% block page_title %}Mis Vendedores{% endblock %}
 {% block page_subtitle %}{{ limites.total }} de {{ limites.max }} vendedores{% endblock %}
-{% block sidebar %}{% include 'vip/_sidebar.html' %}{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
 
 {% block header_actions %}
 {% if limites.puede_crear %}
@@ -21,9 +21,9 @@
 {% block content %}
 
 <!-- Info de limite -->
-<div class="bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] rounded-2xl p-5 mb-6 text-white flex items-center justify-between">
+<div class="bg-[#0f172a] rounded-2xl p-5 mb-6 text-white flex items-center justify-between">
     <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+        <div class="w-12 h-12 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center">
             <i class="fas fa-user-tie text-xl"></i>
         </div>
         <div>
@@ -46,7 +46,7 @@
         <div class="p-5 border-b border-slate-100">
             <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] flex items-center justify-center text-white font-bold text-lg">
+                    <div class="w-12 h-12 rounded-xl bg-[#0f172a] flex items-center justify-center text-white font-bold text-lg">
                         {{ v.vendedor.nombre[0] | upper }}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -86,7 +86,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-slate-500 mb-0.5">Total hoy</p>
-                    <p class="font-bold text-emerald-600">${{ "%.2f"|format(v._stats.total_hoy_usd) }}</p>
+                    <p class="font-bold text-[#0f172a]">${{ "%.2f"|format(v._stats.total_hoy_usd) }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-slate-500 mb-0.5">Ventas mes</p>
@@ -94,7 +94,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-slate-500 mb-0.5">Total mes</p>
-                    <p class="font-bold text-emerald-600">${{ "%.2f"|format(v._stats.total_mes_usd) }}</p>
+                    <p class="font-bold text-[#0f172a]">${{ "%.2f"|format(v._stats.total_mes_usd) }}</p>
                 </div>
             </div>
             
@@ -143,7 +143,7 @@
                 {% else %}
                 <form method="POST" action="{{ url_for('vip.reactivar', vendedor_id=v.vendedor_id) }}" class="flex-1">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="w-full py-2 bg-white border border-slate-200 hover:border-emerald-300 hover:text-emerald-600 text-slate-700 rounded-lg text-xs font-medium transition">
+                    <button type="submit" class="w-full py-2 bg-white border border-slate-200 hover:border-emerald-300 hover:text-[#0f172a] text-slate-700 rounded-lg text-xs font-medium transition">
                         <i class="fas fa-check mr-1"></i> On
                     </button>
                 </form>
@@ -157,7 +157,7 @@
 {% else %}
 <!-- Estado vacio -->
 <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-    <div class="w-20 h-20 bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] rounded-2xl flex items-center justify-center mx-auto mb-4">
+    <div class="w-20 h-20 bg-[#0f172a] rounded-2xl flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-user-tie text-white text-3xl"></i>
     </div>
     <h3 class="text-xl font-bold text-slate-900 mb-2">No tienes vendedores aún</h3>

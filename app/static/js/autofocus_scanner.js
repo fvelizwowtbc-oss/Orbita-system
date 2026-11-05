@@ -25,6 +25,21 @@
 
     // Inputs donde SI se permite escribir sin que el auto-foco robe
     const INPUTS_PERMITIDOS = [
+        'select',
+        'option',
+        'textarea',
+        'input[type="number"]',
+        'input[type="checkbox"]',
+        'input[type="radio"]',
+        'input[type="date"]',
+        'input[type="tel"]',
+        'input[name="cliente_nombre"]',
+        'input[name="telefono"]',
+        'input[name="documento"]',
+        'input[name="cantidad"]',
+        'input[name="precio_usd"]',
+        'input[name="monto"]',
+        'input[name="notas"]',
         'input[type="number"]',
         'input[name="cliente_nombre"]',
         'input[name="telefono"]',
@@ -64,6 +79,10 @@
     }
 
     function enfocarBuscador() {
+        // No robar foco si hay un select abierto
+        if (document.activeElement && document.activeElement.tagName === 'SELECT') return;
+        if (document.activeElement && document.activeElement.tagName === 'OPTION') return;
+        
         if (!inputBusqueda) return;
         if (document.activeElement === inputBusqueda) return;
         if (esInputPermitido(document.activeElement)) return;
@@ -256,6 +275,10 @@
 
         // Cualquier tecla en el documento
         document.addEventListener('keydown', (e) => {
+        // No interferir si el usuario está en un select
+        if (document.activeElement && document.activeElement.tagName === 'SELECT') return;
+        if (e.target && (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION')) return;
+        
             if (esInputPermitido(document.activeElement)) return;
             if (document.activeElement === inputBusqueda) return;
             if (hayModalAbierto()) return;

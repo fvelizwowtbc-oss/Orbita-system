@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Admin - Usuarios{% endblock %}
 {% block page_title %}Gestión de Usuarios{% endblock %}
 {% block page_subtitle %}{{ usuarios|length }} usuario{% if usuarios|length != 1 %}s{% endif %}{% endblock %}
@@ -77,7 +77,7 @@
                     </td>
                     <td class="px-4 py-3 text-right whitespace-nowrap">
                         <a href="{{ url_for('admin.configurar_empresa', uid=u.id) }}"
-                           class="inline-flex items-center gap-2 text-[#1CA7EC] hover:text-white bg-[#e6f7ff] hover:bg-[#1CA7EC] border border-[#b8e8fb] px-4 py-2 rounded-lg text-sm font-medium transition">
+                           class="inline-flex items-center gap-2 text-[#1CA7EC] hover:text-white bg-[#e6f7ff] hover:bg-[#0f172a] border border-[#b8e8fb] px-4 py-2 rounded-lg text-sm font-medium transition">
                             <i class="fas fa-building"></i>
                             <span>Configurar</span>
                         </a>

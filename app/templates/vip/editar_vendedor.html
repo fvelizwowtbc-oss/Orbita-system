@@ -1,8 +1,13 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
+<style>
+    input[type="checkbox"] {
+        accent-color: #0f172a !important;
+    }
+</style>
 {% block title %}Editar {{ vendedor.nombre }}{% endblock %}
 {% block page_title %}Editar Vendedor{% endblock %}
 {% block page_subtitle %}{{ vendedor.nombre }}{% endblock %}
-{% block sidebar %}{% include 'vip/_sidebar.html' %}{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
 
 {% block header_actions %}
 <a href="{{ url_for('vip.detalle', vendedor_id=vendedor.id) }}" class="btn btn-secondary">
@@ -19,7 +24,7 @@
         <!-- Datos basicos -->
         <div class="bg-white rounded-2xl border border-slate-200 p-6">
             <h3 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <i class="fas fa-user text-[#1CA7EC]"></i>
+                <i class="fas fa-user text-[#0f172a]"></i>
                 Datos del vendedor
             </h3>
             
@@ -56,7 +61,7 @@
             
             <div class="space-y-3">
                 <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200">
-                    <input type="checkbox" name="puede_editar_inventario" value="1" 
+                    <input type="checkbox" style="accent-color: #0f172a !important;" name="puede_editar_inventario" value="1" 
                            {% if config and config.puede_editar_inventario %}checked{% endif %} class="mt-1 w-4 h-4">
                     <div class="flex-1">
                         <p class="font-medium text-sm text-slate-800">Editar inventario</p>
@@ -65,7 +70,7 @@
                 </label>
                 
                 <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200">
-                    <input type="checkbox" name="puede_ver_clientes" value="1"
+                    <input type="checkbox" style="accent-color: #0f172a !important;" name="puede_ver_clientes" value="1"
                            {% if config and config.puede_ver_clientes %}checked{% endif %} class="mt-1 w-4 h-4">
                     <div class="flex-1">
                         <p class="font-medium text-sm text-slate-800">Ver clientes</p>
@@ -74,7 +79,7 @@
                 </label>
                 
                 <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200">
-                    <input type="checkbox" name="puede_ver_facturas" value="1"
+                    <input type="checkbox" style="accent-color: #0f172a !important;" name="puede_ver_facturas" value="1"
                            {% if config and config.puede_ver_facturas %}checked{% endif %} class="mt-1 w-4 h-4">
                     <div class="flex-1">
                         <p class="font-medium text-sm text-slate-800">Ver facturas</p>
@@ -83,7 +88,7 @@
                 </label>
                 
                 <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200">
-                    <input type="checkbox" name="puede_ver_reportes_completos" value="1"
+                    <input type="checkbox" style="accent-color: #0f172a !important;" name="puede_ver_reportes_completos" value="1"
                            {% if config and config.puede_ver_reportes_completos %}checked{% endif %} class="mt-1 w-4 h-4">
                     <div class="flex-1">
                         <p class="font-medium text-sm text-slate-800">Ver reportes completos</p>
@@ -92,7 +97,7 @@
                 </label>
                 
                 <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200">
-                    <input type="checkbox" name="puede_cancelar_ventas" value="1"
+                    <input type="checkbox" style="accent-color: #0f172a !important;" name="puede_cancelar_ventas" value="1"
                            {% if config and config.puede_cancelar_ventas %}checked{% endif %} class="mt-1 w-4 h-4">
                     <div class="flex-1">
                         <p class="font-medium text-sm text-slate-800">Cancelar ventas</p>
@@ -101,7 +106,7 @@
                 </label>
                 
                 <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer border border-slate-200">
-                    <input type="checkbox" name="puede_ver_costos" value="1"
+                    <input type="checkbox" style="accent-color: #0f172a !important;" name="puede_ver_costos" value="1"
                            {% if config and config.puede_ver_costos %}checked{% endif %} class="mt-1 w-4 h-4">
                     <div class="flex-1">
                         <p class="font-medium text-sm text-slate-800">Ver costos</p>

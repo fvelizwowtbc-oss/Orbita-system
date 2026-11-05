@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Mis Scanners{% endblock %}
+{% block page_title %}Dispositivos Scanner{% endblock %}
+{% block page_subtitle %}Administra las pantallas de consulta de precios para tus pasillos{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block header_actions %}
+<button onclick="document.getElementById('modalCrearScanner').classList.remove('hidden')" class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+    <i class="fas fa-plus mr-1"></i> Nuevo Scanner
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    {% if scanners %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="text-left px-6 py-3 font-semibold text-slate-600 text-xs uppercase">Nombre del Dispositivo</th>
+                    <th class="text-left px-6 py-3 font-semibold text-slate-600 text-xs uppercase">Usuario de Acceso</th>
+                    <th class="text-center px-6 py-3 font-semibold text-slate-600 text-xs uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for s in scanners %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-6 py-4 font-medium text-slate-800">
+                        <i class="fas fa-tablet-alt text-slate-400 mr-2"></i> {{ s.nombre }}
+                    </td>
+                    <td class="px-6 py-4 text-slate-600">{{ s.email }}</td>
+                    <td class="px-6 py-4 text-center">
+                        <form method="POST" action="{{ url_for('vip.scanners_eliminar', scanner_id=s.id) }}" class="inline" onsubmit="return confirm('¿Seguro que deseas eliminar este scanner?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="text-red-600 hover:text-red-800 p-2" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-tablet-alt text-slate-300 text-5xl mb-4"></i>
+        <p class="text-slate-500">No hay scanners registrados</p>
+        <p class="text-xs text-slate-400 mt-1">Crea uno para habilitar una pantalla de consulta en tus pasillos.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Crear Scanner -->
+<div id="modalCrearScanner" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 bg-[#0f172a] rounded-t-2xl">
+            <h3 class="text-white font-bold text-lg"><i class="fas fa-tablet-alt mr-2"></i> Nuevo Dispositivo</h3>
+        </div>
+        <form method="POST" action="{{ url_for('vip.scanners_crear') }}" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-sm font-medium mb-1">Nombre del Pasillo / Equipo</label>
+                <input type="text" name="nombre" required class="w-full px-4 py-2 border rounded-lg" placeholder="Ej: Pasillo 1 - Herramientas">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Usuario de Acceso (Email)</label>
+                <input type="email" name="email" required class="w-full px-4 py-2 border rounded-lg" placeholder="scanner1@empresa.com">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Contraseña de Acceso</label>
+                <input type="text" name="password" required class="w-full px-4 py-2 border rounded-lg" placeholder="Ej: 123456">
+                <p class="text-xs text-slate-500 mt-1">Esta es la contraseña que usarás en la PC del pasillo.</p>
+            </div>
+            <div class="flex gap-2 pt-4">
+                <button type="button" onclick="document.getElementById('modalCrearScanner').classList.add('hidden')" class="flex-1 py-2 border rounded-lg text-slate-600 hover:bg-slate-50">Cancelar</button>
+                <button type="submit" class="flex-1 py-2 bg-[#0f172a] text-white rounded-lg font-bold">Crear Scanner</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

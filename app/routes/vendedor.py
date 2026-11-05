@@ -305,7 +305,7 @@ def procesar_venta():
                     venta_id=ventas_factura[0].id if ventas_factura else None,
                     cliente_id=cliente_cashea.id,
                     cliente_nombre=cashea_data['nombre_comprador'],
-                    tipo_venta='credito',
+                    tipo_venta='cashea',
                     total_usd=float(resultado['total_usd']),
                     total_ves=float(resultado['total_ves']),
                     saldo_usd=resumen_cashea['saldo'],
@@ -996,10 +996,16 @@ def cashea_pagar_cuota(cuota_id):
     if not cuota:
         return jsonify({'success': False, 'error': 'Cuota no encontrada'}), 404
 
+    # ✅ Obtener la factura de la cuota (fix: `factura` no estaba definida)
+    factura = cuota.factura
+    if not factura:
+        return jsonify({'success': False, 'error': 'Cuota sin factura asociada'}), 400
+
     # ✅ Verificar que la venta fue hecha por este vendedor
     venta = Venta.query.filter_by(
         nro_factura=factura.nro_factura,
         vendedor_id=vid,
+        usuario_id=padre_id,
     ).first()
 
     if not venta:

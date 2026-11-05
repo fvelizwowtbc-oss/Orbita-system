@@ -1,6 +1,7 @@
-# app/routes/auth.py
+﻿# app/routes/auth.py
 from werkzeug.utils import secure_filename
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+import secrets
+from flask import Blueprint, session, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 
 from ..extensions import db
@@ -52,7 +53,34 @@ def login():
                 flash('Tu cuenta esta desactivada. El negocio no tiene suscripcion activa.', 'danger')
                 return render_template('auth/login.html')
 
+                        # ✅ Detectar si ya habia una sesion activa
+        sesion_previa_activa = bool(user.session_token)
+
+                # ✅ Detectar si ya habia una sesion activa
+        sesion_previa_activa = bool(user.session_token)
+
+        # ✅ Generar un token único para esta sesión y guardarlo en la BD
+        # Esto invalida cualquier sesión anterior del mismo usuario
+        nuevo_token = secrets.token_urlsafe(32)
+        user.session_token = nuevo_token
+        db.session.commit()
+        
+        # Guardar el token en la sesión de Flask
+        session['session_token'] = nuevo_token
+        
+        # Iniciar sesión
         login_user(user, remember=False)
+        
+        # Si habia una sesion previa, mostramos un mensaje de advertencia
+        if sesion_previa_activa:
+            flash('Se ha cerrado la sesión anterior que estaba activa en otro dispositivo.', 'warning')
+        
+        # Si habia una sesion previa, mostramos un mensaje de advertencia
+        if sesion_previa_activa:
+            flash('Se ha cerrado la sesión anterior que estaba activa en otro dispositivo.', 'warning')
+
+        if getattr(user, 'es_scanner', False):
+            return redirect(url_for('scanner.pantalla'))
 
         if not user.es_vendedor:
             TasasService.obtener_tasas(user.id)
@@ -64,6 +92,14 @@ def login():
         return redirect(url_for('auth.index'))
 
     return render_template('auth/login.html')
+
+
+
+@auth_bp.route('/limpiar-sesion-robada')
+def limpiar_sesion_robada():
+    from flask import session
+    session.pop('sesion_robada', None)
+    return 'OK'
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -129,6 +165,11 @@ def register():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    # Limpiar el token de la sesión y de la BD
+    current_user.session_token = None
+    db.session.commit()
+    session.pop('session_token', None)
+    
     logout_user()
     flash('Sesión cerrada correctamente.', 'info')
     return redirect(url_for('auth.login'))

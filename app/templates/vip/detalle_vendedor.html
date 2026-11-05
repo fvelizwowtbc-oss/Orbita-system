@@ -1,8 +1,8 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}{{ vendedor.nombre }}{% endblock %}
 {% block page_title %}{{ vendedor.nombre }}{% endblock %}
 {% block page_subtitle %}{{ vendedor.email }}{% endblock %}
-{% block sidebar %}{% include 'vip/_sidebar.html' %}{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
 
 {% block header_actions %}
 <a href="{{ url_for('vip.lista') }}" class="btn btn-secondary">
@@ -16,9 +16,9 @@
 {% block content %}
 
 <!-- Header con avatar -->
-<div class="bg-gradient-to-r from-[#1F2F98] to-[#1CA7EC] rounded-2xl p-6 mb-6 text-white">
+<div class="bg-[#0f172a] rounded-2xl p-6 mb-6 text-white">
     <div class="flex items-center gap-4">
-        <div class="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-3xl">
+        <div class="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-white font-bold text-3xl">
             {{ vendedor.nombre[0] | upper }}
         </div>
         <div>
@@ -34,7 +34,7 @@
                 <i class="fas fa-circle text-[8px]"></i> Activo
             </span>
             {% else %}
-            <span class="badge bg-white/20 text-white/70 border border-white/20">
+            <span class="badge bg-white/10 text-white/70 border border-white/20">
                 <i class="fas fa-circle text-[8px]"></i> Inactivo
             </span>
             {% endif %}
@@ -50,7 +50,7 @@
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-5">
         <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Total hoy</p>
-        <p class="text-2xl font-bold text-emerald-600">${{ "%.2f"|format(stats.total_hoy_usd) }}</p>
+        <p class="text-2xl font-bold text-[#0f172a]">${{ "%.2f"|format(stats.total_hoy_usd) }}</p>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-5">
         <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Ventas mes</p>
@@ -58,7 +58,7 @@
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-5">
         <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Total mes</p>
-        <p class="text-2xl font-bold text-emerald-600">${{ "%.2f"|format(stats.total_mes_usd) }}</p>
+        <p class="text-2xl font-bold text-[#0f172a]">${{ "%.2f"|format(stats.total_mes_usd) }}</p>
     </div>
 </div>
 
@@ -122,7 +122,7 @@
     <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100">
             <h3 class="font-bold text-slate-900 flex items-center gap-2">
-                <i class="fas fa-shopping-cart text-[#1CA7EC]"></i>
+                <i class="fas fa-shopping-cart text-[#0f172a]"></i>
                 Ventas recientes
             </h3>
         </div>
@@ -141,7 +141,7 @@
                     </div>
                 </div>
                 <div class="text-right flex-shrink-0 ml-4">
-                    <p class="font-bold text-emerald-600">${{ "%.2f"|format(v.total_usd or 0) }}</p>
+                    <p class="font-bold text-[#0f172a]">${{ "%.2f"|format(v.total_usd or 0) }}</p>
                     <p class="text-xs text-slate-400">x{{ v.cantidad }}</p>
                 </div>
             </div>

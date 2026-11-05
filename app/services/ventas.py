@@ -7,6 +7,7 @@ from ..extensions import db
 from ..models.producto import Producto
 from ..models.venta import Venta
 from ..models.factura import FacturaCobrar, Abono
+from ..models.caja import CajaTurno
 from ..models.cliente import Cliente
 from .tasas import TasasService
 from ..utils.helpers import generar_numero_factura
@@ -154,6 +155,15 @@ class VentasService:
                     notas='Pago inicial',
                 )
                 db.session.add(abono)
+
+            # ✅ SUMAR A LA CAJA SI EL PAGO ES EN EFECTIVO
+            from decimal import Decimal
+            metodo = data.get('metodo_pago', 'efectivo')
+            if metodo == 'efectivo':
+                caja_abierta = CajaTurno.query.filter_by(usuario_id=usuario_id, estado='abierta').first()
+                if caja_abierta:
+                    caja_abierta.total_ventas_efectivo_usd = Decimal(str(caja_abierta.total_ventas_efectivo_usd or 0)) + Decimal(str(total_usd))
+                    caja_abierta.total_ventas_efectivo_bs = Decimal(str(caja_abierta.total_ventas_efectivo_bs or 0)) + Decimal(str(total_ves))
 
             db.session.commit()
 

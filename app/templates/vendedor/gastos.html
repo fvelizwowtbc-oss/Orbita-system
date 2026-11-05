@@ -5,7 +5,7 @@
 {% block sidebar %}{% include 'vendedor/_sidebar.html' %}{% endblock %}
 
 {% block header_actions %}
-<button onclick="abrirModalGasto()" class="bg-[#1CA7EC] hover:bg-[#1892d4] text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+<button onclick="abrirModalGasto()" class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-4 py-2 rounded-lg text-sm font-medium transition">
     <i class="fas fa-plus mr-1"></i> Nuevo Gasto
 </button>
 {% endblock %}
@@ -74,14 +74,14 @@
 
         <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs text-slate-500 font-medium mr-1">Rapido:</span>
-            <a href="{{ url_for('vendedor.gastos_listado', rango='hoy') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'hoy' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Hoy</a>
-            <a href="{{ url_for('vendedor.gastos_listado', rango='semana') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'semana' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">7 dias</a>
-            <a href="{{ url_for('vendedor.gastos_listado', rango='mes') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'mes' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Este mes</a>
-            <a href="{{ url_for('vendedor.gastos_listado', rango='anio') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'anio' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Este año</a>
-            <a href="{{ url_for('vendedor.gastos_listado', rango='todo') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'todo' %}bg-[#1CA7EC] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Todo</a>
+            <a href="{{ url_for('vendedor.gastos_listado', rango='hoy') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'hoy' %}bg-[#0f172a] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Hoy</a>
+            <a href="{{ url_for('vendedor.gastos_listado', rango='semana') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'semana' %}bg-[#0f172a] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">7 dias</a>
+            <a href="{{ url_for('vendedor.gastos_listado', rango='mes') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'mes' %}bg-[#0f172a] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Este mes</a>
+            <a href="{{ url_for('vendedor.gastos_listado', rango='anio') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'anio' %}bg-[#0f172a] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Este año</a>
+            <a href="{{ url_for('vendedor.gastos_listado', rango='todo') }}" class="px-3 py-1.5 rounded-lg text-xs font-medium {% if filtro_rango == 'todo' %}bg-[#0f172a] text-white{% else %}bg-slate-100 hover:bg-slate-200 text-slate-700{% endif %}">Todo</a>
 
             <div class="flex gap-2 ml-auto">
-                <button type="submit" class="px-5 py-2 bg-[#1CA7EC] hover:bg-[#1892d4] text-white rounded-lg text-sm font-medium">
+                <button type="submit" class="px-5 py-2 bg-[#0f172a] hover:bg-[#1e293b] text-white rounded-lg text-sm font-medium">
                     <i class="fas fa-search mr-1"></i> Filtrar
                 </button>
                 <a href="{{ url_for('vendedor.gastos_listado') }}" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm">
@@ -129,7 +129,7 @@
     <div class="text-center py-16">
         <i class="fas fa-money-bill-wave text-slate-300 text-5xl mb-4"></i>
         <p class="text-slate-500 mb-4">No hay gastos en el rango seleccionado</p>
-        <button onclick="abrirModalGasto()" class="bg-[#1CA7EC] text-white px-4 py-2 rounded-lg text-sm">
+        <button onclick="abrirModalGasto()" class="bg-[#0f172a] text-white px-4 py-2 rounded-lg text-sm">
             <i class="fas fa-plus mr-1"></i> Registrar gasto
         </button>
     </div>
@@ -137,7 +137,7 @@
 </div>
 
 <!-- Modal Gasto -->
-<div id="modalGasto" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+<div id="modalGasto" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
             <h3 class="font-bold text-lg">Nuevo Gasto</h3>
@@ -194,7 +194,7 @@
 
             <div class="flex gap-2 pt-2">
                 <button type="button" onclick="cerrarModalGasto()" class="flex-1 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100">Cancelar</button>
-                <button type="submit" class="flex-1 py-2.5 bg-[#1CA7EC] text-white rounded-xl font-medium"><i class="fas fa-save mr-1"></i> Guardar</button>
+                <button type="submit" class="flex-1 py-2.5 bg-[#0f172a] text-white rounded-xl font-medium"><i class="fas fa-save mr-1"></i> Guardar</button>
             </div>
         </form>
     </div>

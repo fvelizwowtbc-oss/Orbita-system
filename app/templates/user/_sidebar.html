@@ -43,10 +43,20 @@
     <span>Reportes</span>
 </a>
 
-{% if current_user.suscripcion_vigente %}
-<div class="sidebar-divider"></div>
+<a href="{{ url_for('user.caja') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.caja' %}active{% endif %}">
+    <i class="fas fa-cash-register"></i>
+    <span>Caja</span>
+</a>
 
-<a href="{{ url_for('vip.lista') }}" class="sidebar-link {% if request.endpoint and 'vip.' in request.endpoint %}active{% endif %}" title="Mis Vendedores">
+{% if current_user.suscripcion_vigente %}
+
+
+<a href="{{ url_for('vip.scanners_lista') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'vip.scanners_lista' %}active{% endif %}">
+    <i class="fas fa-tablet-alt"></i>
+    <span>Scanners Pasillo</span>
+</a>
+
+<a href="{{ url_for('vip.lista') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint and 'vip.' in request.endpoint %}active{% endif %}" title="Mis Vendedores">
     <i class="fas fa-user-tie"></i>
     <span>Mis Vendedores</span>
 </a>

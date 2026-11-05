@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}Scanner de Precios{% endblock %}
+{% block page_title %}Scanner de Precios{% endblock %}
+{% block page_subtitle %}Consulta rápida para pasillos{% endblock %}
+{% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
+
+{% block content %}
+<!-- Botón de configuración en la parte superior (oculto para el cliente) -->
+<div class="flex justify-between items-center mb-6">
+    <div class="text-slate-500 text-sm">
+        <i class="fas fa-info-circle mr-1"></i> Esta pantalla se limpia automáticamente después del tiempo configurado.
+    </div>
+    <button onclick="document.getElementById('modalConfigScanner').classList.remove('hidden')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition">
+        <i class="fas fa-cog mr-1"></i> Configurar Tiempo
+    </button>
+</div>
+
+<!-- PANTALLA DEL SCANNER -->
+<div class="bg-[#0f172a] rounded-3xl shadow-2xl overflow-hidden flex flex-col items-center justify-center relative" style="height: 70vh; min-height: 500px;">
+    
+    <!-- Formulario de búsqueda (siempre enfocado) -->
+    <div id="searchContainer" class="w-full max-w-2xl px-6 transition-all duration-500 ease-in-out">
+        <div class="relative">
+            <i class="fas fa-barcode absolute left-6 top-1/2 -translate-y-1/2 text-3xl text-slate-400"></i>
+            <input type="text" id="inputScanner" placeholder="Escanea el código de barras aquí..." autocomplete="off"
+                   class="w-full pl-20 pr-6 py-6 bg-white/10 border-2 border-white/20 rounded-2xl text-3xl text-white placeholder-slate-400 focus:outline-none focus:border-[#1CA7EC] focus:bg-white/20 transition shadow-inner">
+        </div>
+        <p class="text-center text-slate-400 text-sm mt-4">Apunta con el lector al código del producto</p>
+    </div>
+
+    <!-- Resultado (oculto al inicio) -->
+    <div id="resultContainer" class="hidden w-full h-full absolute inset-0 bg-[#1e293b] flex flex-col items-center justify-center p-8 transition-all duration-300">
+        <i class="fas fa-check-circle text-emerald-400 text-6xl mb-6"></i>
+        <h2 id="resNombre" class="text-4xl font-bold text-white text-center mb-2">Nombre del Producto</h2>
+        <p id="resCodigo" class="text-slate-400 text-lg mb-8">Cod: 00000</p>
+        
+        <div class="bg-[#0f172a] rounded-3xl p-10 shadow-2xl border border-white/10 text-center w-full max-w-lg">
+            <p class="text-slate-400 text-lg uppercase tracking-wider mb-2">Precio de Venta</p>
+            <div class="flex flex-col items-center gap-2">
+                <span id="resPrecioBs" class="text-7xl font-extrabold text-[#1CA7EC] tracking-tight">Bs. 0.00</span>
+                <div class="flex items-center gap-3 text-2xl font-medium text-slate-300 mt-4 border-t border-slate-700 pt-4">
+                    <span id="resPrecioUsd">$0.00</span>
+                    <span class="text-slate-500 text-sm">(Ref. Tasa: <span id="resTasa">0.00</span>)</span>
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="resetScanner()" class="mt-8 text-slate-400 hover:text-white text-sm underline transition">Volver a buscar</button>
+    </div>
+</div>
+
+<!-- Modal de Configuración -->
+<div id="modalConfigScanner" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 bg-[#0f172a] rounded-t-2xl">
+            <h3 class="text-white font-bold text-lg"><i class="fas fa-cog mr-2"></i> Configurar Scanner</h3>
+        </div>
+        <form method="POST" action="{{ url_for('user.configurar_scanner') }}" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Tiempo en pantalla (segundos)</label>
+                <input type="number" name="tiempo" value="{{ tiempo_scanner }}" min="5" max="60" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0f172a]">
+                <p class="text-xs text-slate-500 mt-1">Recomendado: entre 5 y 15 segundos.</p>
+            </div>
+            <div class="flex gap-2 pt-4">
+                <button type="button" onclick="document.getElementById('modalConfigScanner').classList.add('hidden')" class="flex-1 py-2 border rounded-lg text-slate-600 hover:bg-slate-50">Cancelar</button>
+                <button type="submit" class="flex-1 py-2 bg-[#0f172a] text-white rounded-lg font-bold">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const inputScanner = document.getElementById('inputScanner');
+    const searchContainer = document.getElementById('searchContainer');
+    const resultContainer = document.getElementById('resultContainer');
+    const TIEMPO_ESPERA = {{ tiempo_scanner }} * 1000; // Convertir a milisegundos
+    let timerReset = null;
+
+    // Función para mantener el foco siempre en el buscador
+    function enfocarBuscador() {
+        if (!resultContainer.classList.contains('hidden')) return;
+        if (document.activeElement !== inputScanner && document.getElementById('modalConfigScanner').classList.contains('hidden')) {
+            inputScanner.focus();
+        }
+    }
+
+    // Evento para cuando el lector (o el usuario) presiona Enter
+    inputScanner.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const codigo = inputScanner.value.trim();
+            if (!codigo) return;
+            
+            // Mostrar estado de carga
+            inputScanner.disabled = true;
+            inputScanner.placeholder = "Buscando...";
+            
+            // Consultar al backend
+            fetch('/user/scanner/buscar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ codigo: codigo })
+            })
+            .then(r => r.json())
+            .then(data => {
+                inputScanner.disabled = false;
+                inputScanner.placeholder = "Escanea el código de barras aquí...";
+                
+                if (data.success) {
+                    mostrarResultado(data);
+                } else {
+                    // Sonido de error
+                    try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch(e) {}
+                    inputScanner.value = '';
+                    inputScanner.style.borderColor = '#ef4444';
+                    setTimeout(() => inputScanner.style.borderColor = '', 500);
+                    enfocarBuscador();
+                }
+            })
+            .catch(err => {
+                inputScanner.disabled = false;
+                enfocarBuscador();
+            });
+        }
+    });
+
+    function mostrarResultado(data) {
+        // Sonido de éxito
+        try { new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg').play(); } catch(e) {}
+        
+        // Llenar datos
+        document.getElementById('resNombre').textContent = data.nombre;
+        document.getElementById('resCodigo').textContent = 'Cod: ' + data.codigo;
+        document.getElementById('resPrecioBs').textContent = 'Bs. ' + data.precio_bs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('resPrecioUsd').textContent = '$' + data.precio_usd.toFixed(2);
+        document.getElementById('resTasa').textContent = data.tasa.toFixed(2);
+        
+        // Animación de transición
+        searchContainer.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => {
+            searchContainer.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+            resultContainer.classList.add('anim-fade-in');
+        }, 300);
+        
+        // Temporizador para volver a la pantalla de búsqueda
+        clearTimeout(timerReset);
+        timerReset = setTimeout(resetScanner, TIEMPO_ESPERA);
+    }
+
+    function resetScanner() {
+        clearTimeout(timerReset);
+        resultContainer.classList.add('hidden');
+        resultContainer.classList.remove('anim-fade-in');
+        
+        searchContainer.classList.remove('hidden');
+        setTimeout(() => {
+            searchContainer.classList.remove('opacity-0', 'scale-95');
+        }, 50);
+        
+        inputScanner.value = '';
+        inputScanner.focus();
+    }
+
+    // Mantener el foco cuando se haga clic en cualquier parte de la pantalla oscura
+    document.querySelector('.bg-\[\#0f172a\]').addEventListener('click', function(e) {
+        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+            enfocarBuscador();
+        }
+    });
+
+    // Mantener el foco si se pierde por alguna razón
+    setInterval(enfocarBuscador, 1000);
+
+    // Foco inicial
+    setTimeout(enfocarBuscador, 500);
+</script>
+{% endblock %}

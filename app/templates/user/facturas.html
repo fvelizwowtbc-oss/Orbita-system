@@ -17,7 +17,7 @@
             <option value="pendiente" {% if filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
             <option value="pagado" {% if filtro == 'pagado' %}selected{% endif %}>Pagadas</option>
         </select>
-        <button type="submit" class="px-6 py-2 bg-[#1CA7EC] text-white rounded-lg text-sm" data-ripple>
+        <button type="submit" class="px-6 py-2 bg-[#0f172a] text-white rounded-lg text-sm" data-ripple>
             <i class="fas fa-search mr-1"></i> Buscar
         </button>
     </form>
@@ -78,7 +78,7 @@
                                 data-nro="{{ f.nro_factura }}" 
                                 data-filename="{{ f.filename or '' }}"
                                 onclick="accionFactura(this)"
-                                class="text-[#1CA7EC] hover:text-blue-800 p-1" 
+                                class="text-[#0f172a] hover:text-[#1e293b] p-1" 
                                 title="Ver factura">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -98,7 +98,7 @@
                                 data-nro="{{ f.nro_factura }}" 
                                 data-saldo="{{ f.saldo_usd }}"
                                 onclick="accionFactura(this)"
-                                class="text-[#4ADEDE] hover:text-emerald-800 p-1 ml-1" 
+                                class="text-[#0f172a] hover:text-[#1e293b] p-1 ml-1" 
                                 title="Abonar">
                             <i class="fas fa-dollar-sign"></i>
                         </button>
@@ -117,170 +117,38 @@
     {% endif %}
 </div>
 
-<div id="modalFactura" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col">
-        <div class="px-6 py-4 border-b flex justify-between items-center bg-slate-50">
-            <h3 class="font-bold">
-                <i class="fas fa-file-invoice text-[#1CA7EC] mr-2"></i>
-                <span id="tituloFactura">Factura</span>
-            </h3>
-            <div class="flex gap-2">
-                <button type="button" onclick="imprimirFactura()" class="px-3 py-1.5 bg-[#1CA7EC] text-white rounded-lg text-sm" data-ripple>
-                    <i class="fas fa-print mr-1"></i> Imprimir
-                </button>
-                <button type="button" onclick="cerrarModalFactura()" class="px-3 py-1.5 border rounded-lg text-sm">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-        <div class="flex-1 overflow-hidden bg-slate-100">
-            <iframe id="iframeFactura" class="w-full h-full border-0"></iframe>
-        </div>
-    </div>
-</div>
-
-<div id="modalAbono" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md">
-        <div class="px-6 py-4 border-b">
-            <h3 class="font-bold">Registrar Abono</h3>
-            <p class="text-sm text-slate-500 mt-1">
-                Factura: <span id="facturaNro" class="font-mono text-slate-700"></span>
-            </p>
-            <div class="flex justify-between mt-2 text-sm">
-                <span class="text-slate-500">Saldo pendiente:</span>
-                <span id="saldoFactura" class="font-bold text-red-600"></span>
-            </div>
-        </div>
-        <form id="formAbono" method="POST" class="p-6 space-y-4">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <div>
-                <label class="block text-sm font-medium mb-1">Monto USD *</label>
-                <input type="number" step="0.01" name="monto_usd" id="a_monto_usd" required
-                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Monto VES</label>
-                <input type="number" step="0.01" name="monto_ves" id="a_monto_ves" value="0"
-                       class="w-full px-4 py-2 border rounded-lg">
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">
-                    Tasa usada (Bs/USD)
-                    <span class="text-xs text-slate-500 ml-1" id="tasaInfoModo"></span>
-                </label>
-                <div class="flex gap-2">
-                    <input type="number" step="0.01" name="tasa_usada" id="a_tasa" 
-                           value="{{ ((tasas.oficial if tasas and tasas.oficial else 50) or 50)|float }}"
-                           class="flex-1 px-4 py-2 border rounded-lg bg-slate-50"
-                           readonly>
-                    <button type="button" onclick="toggleTasaEditable()" 
-                            class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs"
-                            title="Editar manualmente">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                </div>
-                <p class="text-xs text-slate-500 mt-1">
-                    Tasa <span id="tasaFuenteAbono" class="font-medium text-[#1CA7EC]">
-                        {{ (tasas.fuente_oficial if tasas else 'BCV') }}
-                    </span>
-                </p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Método de pago</label>
-                <select name="metodo_pago" class="w-full px-4 py-2 border rounded-lg">
-                    <option value="efectivo">Efectivo</option>
-                    <option value="transferencia">Transferencia</option>
-                    <option value="pago_movil">Pago Móvil</option>
-                    <option value="punto">Punto de Venta</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Notas</label>
-                <textarea name="notas" rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onclick="cerrarAbono()" class="px-4 py-2 border rounded-lg">Cancelar</button>
-                <button type="submit" class="px-6 py-2 bg-[#4ADEDE] text-white rounded-lg">
-                    <i class="fas fa-check mr-1"></i> Registrar
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='vendor/sweetalert2.all.min.js') }}"></script>
 <script>
-// ============================================================
-// HELPERS: Toast con SweetAlert2
-// ============================================================
 function toastError(msg) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#dc2626' });
-    } else { console.error(msg); }
+    if (typeof Swal !== 'undefined') { Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#dc2626' }); }
+    else { console.error(msg); }
 }
-function toastWarning(msg) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({ icon: 'warning', title: 'Atencion', text: msg, confirmButtonColor: '#f59e0b' });
-    } else { console.warn(msg); }
-}
-function toastSuccess(msg) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({ icon: 'success', title: msg, timer: 2000, showConfirmButton: false, timerProgressBar: true });
-    } else { console.log(msg); }
-}
-
-console.log('=== facturas.html cargado ===');
-
-function tieneAPI() {
-    return (typeof window.pywebview !== 'undefined') &&
-           (window.pywebview.api) &&
-           (typeof window.pywebview.api.abrir_factura_archivo === 'function');
-}
+function tieneAPI() { return false; }
 
 function accionFactura(btn) {
     var accion = btn.dataset.accion;
     var id = btn.dataset.id;
     var nro = btn.dataset.nro;
     console.log('accionFactura:', accion, id, nro);
-    
-    if (accion === 'ver') {
-        verFactura(id, nro, btn.dataset.filename);
-    } else if (accion === 'abonar') {
-        abonar(id, parseFloat(btn.dataset.saldo), nro, 0);
-    }
+    if (accion === 'ver') { verFactura(id, nro, btn.dataset.filename); }
+    else if (accion === 'abonar') { abonar(id, parseFloat(btn.dataset.saldo), nro, 0); }
 }
+
 function verFactura(id, nro, filename) {
-    console.log('verFactura:', {id: id, nro: nro, filename: filename});
-    console.log('tieneAPI:', tieneAPI());
-    
-    if (tieneAPI() && filename) {
-        window.pywebview.api.abrir_factura_archivo(filename)
-            .then(function(result) {
-                console.log('Resultado API:', result);
-                if (result && result.success) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({ icon: 'success', title: 'Factura abierta', timer: 2000, showConfirmButton: false });
-                    }
-                } else {
-                    toastError('Error al abrir factura: ' + ((result && result.error) || 'Error desconocido'));
-                }
-            })
-            .catch(function(e) {
-                console.error('Exception:', e);
-                toastError('Error: ' + e.message);
-            });
-    } else {
-        abrirFacturaEnModal(id, nro);
-    }
+    abrirFacturaEnModal(id, nro);
 }
 
 function abrirFacturaEnModal(id, nro) {
-    document.getElementById('tituloFactura').textContent = 'Factura ' + nro;
+    var titulo = document.getElementById('tituloFactura');
+    if (!titulo) {
+        console.error('No existe #tituloFactura');
+        toastError('Error: el modal de factura no esta en la pagina');
+        return;
+    }
+    titulo.textContent = 'Factura ' + nro;
     document.getElementById('modalFactura').classList.remove('hidden');
     var iframe = document.getElementById('iframeFactura');
     iframe.srcdoc = '<div style="padding:2rem;text-align:center;color:#64748b;">Cargando...</div>';
@@ -307,61 +175,33 @@ function imprimirFactura() {
 }
 
 function abonar(id, saldo, nro, total) {
+    var modalAbono = document.getElementById('modalAbono');
+    if (!modalAbono) { toastError('Error: el modal de abono no esta en la pagina'); return; }
     document.getElementById('facturaNro').textContent = nro;
     document.getElementById('saldoFactura').textContent = '$' + Number(saldo).toFixed(2);
     document.getElementById('formAbono').action = '/user/factura/' + id + '/abonar?filtro={{ filtro }}';
     
-    // ✅ Usar la tasa activa del sistema (BCV o manual)
     var tasaActiva = {{ ((tasas.oficial if tasas and tasas.oficial else 50) or 50)|float }};
     var tasaInput = document.getElementById('a_tasa');
-    if (tasaInput) {
-        tasaInput.value = tasaActiva.toFixed(2);
-    }
+    if (tasaInput) tasaInput.value = tasaActiva.toFixed(2);
     
-    // ✅ Actualizar el label de la fuente
     var fuenteEl = document.getElementById('tasaFuenteAbono');
-    if (fuenteEl) {
-        fuenteEl.textContent = '{{ (tasas.fuente_oficial if tasas else "BCV") }}';
-    }
+    if (fuenteEl) fuenteEl.textContent = '{{ (tasas.fuente_oficial if tasas else "BCV") }}';
     
-    var modoEl = document.getElementById('tasaInfoModo');
-    if (modoEl) {
-        var modo = '{{ (tasas.modo_tasa if tasas else "auto") }}';
-        if (modo === 'manual') {
-            modoEl.textContent = '(Manual)';
-            modoEl.className = 'text-xs text-amber-600 ml-1';
-        } else {
-            modoEl.textContent = '(BCV)';
-            modoEl.className = 'text-xs text-[#1CA7EC] ml-1';
-        }
-    }
-    
-    // ✅ Calcular montos
     var montoUsdInput = document.getElementById('a_monto_usd');
     var montoVesInput = document.getElementById('a_monto_ves');
-    if (montoUsdInput) {
-        montoUsdInput.value = Number(saldo).toFixed(2);
-    }
-    if (montoVesInput) {
-        montoVesInput.value = (Number(saldo) * tasaActiva).toFixed(2);
-    }
+    if (montoUsdInput) montoUsdInput.value = Number(saldo).toFixed(2);
+    if (montoVesInput) montoVesInput.value = (Number(saldo) * tasaActiva).toFixed(2);
     
-    // Resetear modo editable
     var inputTasa = document.getElementById('a_tasa');
-    if (inputTasa) {
-        inputTasa.readOnly = true;
-        inputTasa.classList.add('bg-slate-50');
-        inputTasa.classList.remove('bg-white');
-    }
+    if (inputTasa) { inputTasa.readOnly = true; inputTasa.classList.add('bg-slate-50'); inputTasa.classList.remove('bg-white'); }
     
-    document.getElementById('modalAbono').classList.remove('hidden');
+    modalAbono.classList.remove('hidden');
 }
 
-// ✅ Permitir editar manualmente la tasa si es necesario
 function toggleTasaEditable() {
     var input = document.getElementById('a_tasa');
     if (!input) return;
-    
     if (input.readOnly) {
         input.readOnly = false;
         input.classList.remove('bg-slate-50');
@@ -379,138 +219,56 @@ function cerrarAbono() {
     document.getElementById('modalAbono').classList.add('hidden');
 }
 
-
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { cerrarModalFactura(); cerrarAbono(); }
+    if (e.key === 'Escape') { 
+        var mf = document.getElementById('modalFactura'); if (mf) mf.classList.add('hidden');
+        var ma = document.getElementById('modalAbono'); if (ma) ma.classList.add('hidden');
+        var mc = document.getElementById('modalCancelarFactura'); if (mc) mc.classList.add('hidden');
+    }
 });
 
-window.addEventListener('pywebviewready', function() {
-    console.log('✅ PyWebView listo, API disponible');
-});
-
-// ============================================================
-// AUTO-CALCULO DE MONTOS EN ABONO
-// ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     var elUsd = document.getElementById('a_monto_usd');
     var elTasa = document.getElementById('a_tasa');
     var elVes = document.getElementById('a_monto_ves');
-    
     if (elUsd && elTasa && elVes) {
         elUsd.addEventListener('input', function() {
             var usd = parseFloat(elUsd.value) || 0;
             var tasa = parseFloat(elTasa.value) || 0;
             elVes.value = (usd * tasa).toFixed(2);
         });
-        
         elTasa.addEventListener('input', function() {
             var usd = parseFloat(elUsd.value) || 0;
             var tasa = parseFloat(elTasa.value) || 0;
             elVes.value = (usd * tasa).toFixed(2);
         });
-        
         elVes.addEventListener('input', function() {
             var ves = parseFloat(elVes.value) || 0;
             var tasa = parseFloat(elTasa.value) || 0;
-            if (tasa > 0) {
-                elUsd.value = (ves / tasa).toFixed(2);
-            }
+            if (tasa > 0) elUsd.value = (ves / tasa).toFixed(2);
         });
     }
 });
 
-</script>
-
-
-<!-- ============================================================
-     MODAL: Cancelar factura
-     ============================================================ -->
-<div id="modalCancelarFactura" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-red-600 to-red-700 rounded-t-2xl flex justify-between items-center">
-            <div>
-                <h3 class="text-white font-bold text-lg flex items-center gap-2">
-                    <i class="fas fa-ban"></i>
-                    Cancelar factura
-                </h3>
-                <p class="text-xs text-white/80 mt-0.5">Esta accion no se puede deshacer</p>
-            </div>
-            <button type="button" onclick="cerrarModalCancelar()" class="text-white/80 hover:text-white">
-                <i class="fas fa-times text-lg"></i>
-            </button>
-        </div>
-
-        <div class="p-6 space-y-4">
-            <!-- Info de la factura -->
-            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-                <p class="text-xs text-red-800 font-medium mb-1">Factura a cancelar</p>
-                <p class="font-mono text-sm font-bold text-red-900" id="cancelarNroFactura">-</p>
-            </div>
-
-            <!-- Info: devuelve stock -->
-            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                <p class="text-xs text-blue-700 flex items-center gap-1">
-                    <i class="fas fa-info-circle"></i>
-                    El stock de los productos sera devuelto automaticamente
-                </p>
-            </div>
-
-            <!-- PIN -->
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">
-                    PIN de cancelacion <span class="text-red-500">*</span>
-                </label>
-                <input type="password" id="cancelarPin" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-                       placeholder="••••••"
-                       class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-lg text-center tracking-widest font-mono focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition">
-                <p class="text-xs text-slate-500 mt-1">
-                    <i class="fas fa-lock mr-1"></i>
-                    Solo el VIP conoce este PIN
-                </p>
-            </div>
-
-            <!-- Motivo -->
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Motivo (opcional)</label>
-                <textarea id="cancelarMotivo" rows="2" maxlength="500"
-                          placeholder="Razon de la cancelacion..."
-                          class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none resize-none"></textarea>
-            </div>
-        </div>
-
-        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex gap-2">
-            <button type="button" onclick="cerrarModalCancelar()"
-                    class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 text-sm font-medium">
-                Cancelar
-            </button>
-            <button type="button" onclick="confirmarCancelarFactura()" id="btnConfirmarCancelar"
-                    class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
-                <i class="fas fa-ban"></i>
-                Cancelar factura
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
 // ============================================================
 // CANCELAR FACTURA
 // ============================================================
 var _facturaACancelar = null;
 
 function abrirModalCancelar(nroFactura) {
+    var modal = document.getElementById('modalCancelarFactura');
+    if (!modal) { toastError('Error: el modal de cancelar no esta en la pagina'); return; }
     _facturaACancelar = nroFactura;
     document.getElementById('cancelarNroFactura').textContent = nroFactura;
     document.getElementById('cancelarPin').value = '';
     document.getElementById('cancelarMotivo').value = '';
-    document.getElementById('modalCancelarFactura').classList.remove('hidden');
-    setTimeout(function() {
-        document.getElementById('cancelarPin').focus();
-    }, 100);
+    modal.classList.remove('hidden');
+    setTimeout(function() { document.getElementById('cancelarPin').focus(); }, 100);
 }
 
 function cerrarModalCancelar() {
-    document.getElementById('modalCancelarFactura').classList.add('hidden');
+    var modal = document.getElementById('modalCancelarFactura');
+    if (modal) modal.classList.add('hidden');
     _facturaACancelar = null;
 }
 
@@ -519,21 +277,13 @@ async function confirmarCancelarFactura() {
     const motivo = document.getElementById('cancelarMotivo').value.trim();
 
     if (!pin || pin.length !== 6) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'PIN invalido',
-            text: 'Ingresa un PIN de 6 digitos',
-            confirmButtonColor: '#f59e0b',
-        });
+        Swal.fire({ icon: 'warning', title: 'PIN invalido', text: 'Ingresa un PIN de 6 digitos', confirmButtonColor: '#f59e0b' });
         return;
     }
 
-    // Confirmar
     const confirm = await Swal.fire({
         title: 'Cancelar factura?',
-        html: '<p style="font-size:14px;">Factura: <strong>' + _facturaACancelar + '</strong></p>' +
-              '<p style="font-size:12px;color:#64748b;margin-top:8px;">' +
-              'Esta accion no se puede deshacer</p>',
+        html: '<p style="font-size:14px;">Factura: <strong>' + _facturaACancelar + '</strong></p><p style="font-size:12px;color:#64748b;margin-top:8px;">Esta accion no se puede deshacer</p>',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc2626',
@@ -545,7 +295,6 @@ async function confirmarCancelarFactura() {
 
     if (!confirm.isConfirmed) return;
 
-    // Enviar
     const btn = document.getElementById('btnConfirmarCancelar');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelando...';
@@ -553,54 +302,138 @@ async function confirmarCancelarFactura() {
     try {
         const r = await fetch('/user/facturas/' + _facturaACancelar + '/cancelar', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}',
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
             body: JSON.stringify({ pin: pin, motivo: motivo }),
         });
         const data = await r.json();
 
         if (data.success) {
             cerrarModalCancelar();
-            Swal.fire({
-                icon: 'success',
-                title: 'Factura cancelada',
-                text: data.message || 'La factura ha sido cancelada',
-                timer: 2000,
-                showConfirmButton: false,
-                timerProgressBar: true,
-            }).then(() => location.reload());
+            Swal.fire({ icon: 'success', title: 'Factura cancelada', text: data.message || 'La factura ha sido cancelada', timer: 2000, showConfirmButton: false, timerProgressBar: true }).then(() => location.reload());
         } else {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-ban"></i> Cancelar factura';
-
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.error || 'No se pudo cancelar la factura',
-                confirmButtonColor: '#dc2626',
-            });
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'No se pudo cancelar la factura', confirmButtonColor: '#dc2626' });
         }
     } catch (e) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-ban"></i> Cancelar factura';
-
-        Swal.fire({
-            icon: 'error',
-            title: 'Error de conexion',
-            text: e.message,
-        });
+        Swal.fire({ icon: 'error', title: 'Error de conexion', text: e.message });
     }
 }
 
-// Cerrar con Escape
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        cerrarModalCancelar();
-    }
+    if (e.key === 'Escape') cerrarModalCancelar();
 });
 </script>
+{% endblock %}
 
+{% block modals %}
+<!-- MODAL: Ver factura -->
+<div id="modalFactura" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4" style="z-index: 99999 !important;">
+    <div class="bg-white rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col">
+        <div class="px-6 py-4 border-b flex justify-between items-center bg-slate-50">
+            <h3 class="font-bold">
+                <i class="fas fa-file-invoice text-[#0f172a] mr-2"></i>
+                <span id="tituloFactura">Factura</span>
+            </h3>
+            <div class="flex gap-2">
+                <button type="button" onclick="imprimirFactura()" class="px-3 py-1.5 bg-[#0f172a] text-white rounded-lg text-sm" data-ripple>
+                    <i class="fas fa-print mr-1"></i> Imprimir
+                </button>
+                <button type="button" onclick="cerrarModalFactura()" class="px-3 py-1.5 border rounded-lg text-sm">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-hidden bg-slate-100">
+            <iframe id="iframeFactura" class="w-full h-full border-0"></iframe>
+        </div>
+    </div>
+</div>
 
+<!-- MODAL: Abonar -->
+<div id="modalAbono" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 99999 !important;">
+    <div class="bg-white rounded-2xl w-full max-w-md">
+        <div class="px-6 py-4 border-b">
+            <h3 class="font-bold">Registrar Abono</h3>
+            <p class="text-sm text-slate-500 mt-1">Factura: <span id="facturaNro" class="font-mono text-slate-700"></span></p>
+            <div class="flex justify-between mt-2 text-sm">
+                <span class="text-slate-500">Saldo pendiente:</span>
+                <span id="saldoFactura" class="font-bold text-red-600"></span>
+            </div>
+        </div>
+        <form id="formAbono" method="POST" class="p-6 space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label class="block text-sm font-medium mb-1">Monto USD *</label>
+                <input type="number" step="0.01" name="monto_usd" id="a_monto_usd" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Monto VES</label>
+                <input type="number" step="0.01" name="monto_ves" id="a_monto_ves" value="0" class="w-full px-4 py-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Tasa usada (Bs/USD)</label>
+                <div class="flex gap-2">
+                    <input type="number" step="0.01" name="tasa_usada" id="a_tasa" value="{{ ((tasas.oficial if tasas and tasas.oficial else 50) or 50)|float }}" class="flex-1 px-4 py-2 border rounded-lg bg-slate-50" readonly>
+                    <button type="button" onclick="toggleTasaEditable()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs" title="Editar manualmente"><i class="fas fa-edit"></i></button>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Tasa <span id="tasaFuenteAbono" class="font-medium text-[#0f172a]">{{ (tasas.fuente_oficial if tasas else 'BCV') }}</span></p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Método de pago</label>
+                <select name="metodo_pago" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="pago_movil">Pago Móvil</option>
+                    <option value="punto">Punto de Venta</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Notas</label>
+                <textarea name="notas" rows="2" class="w-full px-4 py-2 border rounded-lg"></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-4 border-t">
+                <button type="button" onclick="cerrarAbono()" class="px-4 py-2 border rounded-lg">Cancelar</button>
+                <button type="submit" class="px-6 py-2 bg-[#0f172a] text-white rounded-lg"><i class="fas fa-check mr-1"></i> Registrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Cancelar factura -->
+<div id="modalCancelarFactura" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style="z-index: 99999 !important;">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-red-600 to-red-700 rounded-t-2xl flex justify-between items-center">
+            <div>
+                <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fas fa-ban"></i> Cancelar factura</h3>
+                <p class="text-xs text-white/80 mt-0.5">Esta accion no se puede deshacer</p>
+            </div>
+            <button type="button" onclick="cerrarModalCancelar()" class="text-white/80 hover:text-white"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p class="text-xs text-red-800 font-medium mb-1">Factura a cancelar</p>
+                <p class="font-mono text-sm font-bold text-red-900" id="cancelarNroFactura">-</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <p class="text-xs text-blue-700 flex items-center gap-1"><i class="fas fa-info-circle"></i> El stock de los productos sera devuelto automaticamente</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">PIN de cancelacion <span class="text-red-500">*</span></label>
+                <input type="password" id="cancelarPin" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="••••••" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-lg text-center tracking-widest font-mono focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition">
+                <p class="text-xs text-slate-500 mt-1"><i class="fas fa-lock mr-1"></i> Solo el VIP conoce este PIN</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Motivo (opcional)</label>
+                <textarea id="cancelarMotivo" rows="2" maxlength="500" placeholder="Razon de la cancelacion..." class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none resize-none"></textarea>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex gap-2">
+            <button type="button" onclick="cerrarModalCancelar()" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 text-sm font-medium">Cancelar</button>
+            <button type="button" onclick="confirmarCancelarFactura()" id="btnConfirmarCancelar" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2"><i class="fas fa-ban"></i> Cancelar factura</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

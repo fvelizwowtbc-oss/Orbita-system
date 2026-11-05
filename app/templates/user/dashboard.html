@@ -8,7 +8,7 @@
     <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-3 flex items-center gap-3 hover:shadow-xl transition-all duration-200 cursor-pointer anim-hover-lift"
          onclick="copiarURLAcesso()"
          title="Click para copiar">
-        <div class="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div class="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0"> 
             <i class="fas fa-mobile-alt text-white text-sm"></i>
         </div>
         <div class="text-left">
@@ -133,10 +133,10 @@ function copiarURLAcesso() {
 <!-- ============================================================
      TASA BCV - PROMINENTE Y ELEGANTE
      ============================================================ -->
-<div class="bg-gradient-to-br from-[#1F2F98] via-[#1CA7EC] to-[#787FF6] rounded-2xl p-6 mb-6 relative overflow-hidden">
+<div class="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-6 mb-6 relative overflow-hidden shadow-xl"> 
     <!-- Elementos decorativos de fondo -->
     <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-    <div class="absolute bottom-0 left-0 w-48 h-48 bg-[#4ADEDE]/20 rounded-full blur-3xl -ml-16 -mb-16"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 bg-[#0f172a]/20 rounded-full blur-3xl -ml-16 -mb-16"></div>
     
     <div class="relative flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-5">
@@ -151,13 +151,13 @@ function copiarURLAcesso() {
                     <p class="text-3xl font-bold text-white tracking-tight">
                         Bs. {{ "%.2f"|format(tasa_bcv) }}
                     </p>
-                    <span class="text-sm text-slate-400 font-normal">/ USD</span>
+                    <span class="text-sm text-slate-300 font-normal">/ USD</span>
                 </div>
             </div>
         </div>
         
         <button onclick="actualizarTasa()" 
-                class="group flex items-center gap-2 px-5 py-3 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl text-white text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/20 shadow-lg shadow-black/5">
+                class="group flex items-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/10 shadow-lg shadow-black/20">
             <i class="fas fa-sync-alt transition-transform duration-500 group-hover:rotate-180"></i>
             <span>Actualizar</span>
         </button>
@@ -175,7 +175,7 @@ function copiarURLAcesso() {
         <!-- Header -->
         <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] rounded-xl flex items-center justify-center shadow-sm shadow-blue-500/20">
+                <div class="w-10 h-10 bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] rounded-xl flex items-center justify-center shadow-sm shadow-blue-500/20"> 
                     <i class="fas fa-trophy text-white"></i>
                 </div>
                 <div>
@@ -198,26 +198,26 @@ function copiarURLAcesso() {
                 <!-- Ranking -->
                 <div class="flex-shrink-0">
                     {% if loop.index == 1 %}
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-blue-500/20">
+                    <div class="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20"> 
                         <i class="fas fa-crown text-sm"></i>
                     </div>
                     {% elif loop.index == 2 %}
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7BD5F5] to-[#4ADEDE] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-cyan-500/20">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20"> 
                         2
                     </div>
                     {% elif loop.index == 3 %}
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#787FF6] to-[#1CA7EC] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-purple-500/20">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20"> 
                         3
                     </div>
                     {% else %}
-                    <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-sm">
+                    <div class="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20">
                         {{ loop.index }}
                     </div>
                     {% endif %}
                 </div>
                 
                 <!-- Avatar -->
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-sm shadow-blue-500/20">
+                <div class="w-10 h-10 rounded-full bg-[#0f172a] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-sm shadow-slate-900/20"> 
                     {{ c.nombre[0] | upper }}
                 </div>
                 
@@ -267,7 +267,7 @@ function copiarURLAcesso() {
         <!-- Header -->
         <div class="px-5 py-5 border-b border-slate-100">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-sm shadow-amber-500/20">
+                <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-sm shadow-amber-500/20"> 
                     <i class="fas fa-exclamation-triangle text-white text-sm"></i>
                 </div>
                 <div>
