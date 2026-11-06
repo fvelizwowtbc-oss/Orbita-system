@@ -12,5 +12,18 @@ jobs:
     steps:
       - name: Ping a Render
         run: |
-          curl -s -o /dev/null -w "%{http_code}" TU_URL_DE_RENDER
-          echo " - Ping realizado a las $(date)"
+          # ⚠️ REEMPLAZA ESTO POR TU URL REAL DE RENDER (incluye el https://)
+          URL="https://TU_URL_DE_RENDER.onrender.com"
+          
+          # Hacemos el ping silencioso y guardamos el código de respuesta
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          
+          echo "Código de respuesta HTTP: $STATUS"
+          echo "Ping realizado a las $(date)"
+          
+          # Si el código HTTP es 200 (OK) o 502 (Bad Gateway mientras despierta), todo bien.
+          # Si es un error de conexión (000), fallará el script.
+          if [ "$STATUS" -eq 000 ]; then
+            echo "❌ Error: No se pudo conectar a la URL. Verifica que sea correcta."
+            exit 1
+          fi
