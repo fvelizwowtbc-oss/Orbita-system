@@ -13,7 +13,7 @@ jobs:
       - name: Ping a Render
         run: |
           # ⚠️ REEMPLAZA ESTO POR TU URL REAL DE RENDER (incluye el https://)
-          URL="https://TU_URL_DE_RENDER.onrender.com"
+          URL="https://orbita-system.onrender.com"
           
           # Hacemos el ping silencioso y guardamos el código de respuesta
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
