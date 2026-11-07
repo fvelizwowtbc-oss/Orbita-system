@@ -36,12 +36,22 @@ class Config:
             "SECRET_KEY al .env"
         )
 
+    # ============ IMAGEKIT (IMAGENES) ============
+    IMAGEKIT_PUBLIC_KEY = os.environ.get("IMAGEKIT_PUBLIC_KEY")
+    IMAGEKIT_PRIVATE_KEY = os.environ.get("IMAGEKIT_PRIVATE_KEY")
+    IMAGEKIT_URL_ENDPOINT = os.environ.get("IMAGEKIT_URL_ENDPOINT")
+
     # ============ BASE DE DATOS ============
     _db_url = os.environ.get('DATABASE_URL', '')
     if _db_url.startswith('postgres://'):
         _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
 
     SQLALCHEMY_DATABASE_URI = _db_url or f"sqlite:///{INSTANCE_DIR / 'sistema_gestion.db'}"
+    
+    # ✅ FIX: Si estamos en Render (produccion) y no hay DATABASE_URL, es un error fatal
+    import os as _os
+    if _os.environ.get('RENDER') and not _db_url:
+        raise RuntimeError("FATAL: DATABASE_URL no está configurada en Render. La app no puede usar SQLite en producción.")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Opciones del motor: solo aplicamos check_same_thread a SQLite

@@ -594,46 +594,52 @@ def producto_datos(producto_id):
 # ============================================================
 @vendedor_bp.route('/factura/<int:factura_id>/ver-modal')
 def ver_factura_modal(factura_id):
-    """Devuelve el HTML de la factura para mostrar en un iframe."""
     from ..models.factura import FacturaCobrar
-    import os
-    import glob
-
+    from ..models.venta import Venta
+    from ..services.facturas import FacturasService
+    from ..services.tasas import TasasService
+    
     padre_id = current_user.usuario_padre_id
-    vid = current_user.id
+    factura = FacturaCobrar.query.filter_by(id=factura_id, usuario_id=padre_id).first_or_404()
+    
+    ventas = Venta.query.filter_by(nro_factura=factura.nro_factura, usuario_id=padre_id).all()
+    
+    config = FacturasService.obtener_config_empresa(padre_id)
+    tasas = TasasService.obtener_tasas(padre_id)
+    tasa_activa = float(tasas.get(tasas.get('activa', 'oficial'), 0))
+    
+    return render_template('user/factura_template.html',
+        factura=factura,
+        ventas=ventas,
+        config=config,
+        tasas=tasas,
+        tasa_activa=tasa_activa,
+        vendedor_nombre=current_user.nombre
+    )
 
-    # Si tiene permiso de ver reportes completos, puede ver cualquier factura del negocio
-    if _tiene_permiso('puede_ver_reportes_completos'):
-        factura = FacturaCobrar.query.filter_by(id=factura_id, usuario_id=padre_id).first()
-    else:
-        # Sino, solo las facturas de sus propias ventas
-        factura = FacturaCobrar.query.filter_by(id=factura_id, usuario_id=padre_id) \
-            .filter(FacturaCobrar.venta.has(Venta.vendedor_id == vid)).first()
+def ver_factura_modal(factura_id):
+    from ..models.factura import FacturaCobrar
+    from ..models.venta import Venta
+    from ..services.facturas import FacturasService
+    from ..services.tasas import TasasService
+    
+    padre_id = current_user.usuario_padre_id
+    factura = FacturaCobrar.query.filter_by(id=factura_id, usuario_id=padre_id).first_or_404()
+    ventas = Venta.query.filter_by(nro_factura=factura.nro_factura, usuario_id=padre_id).all()
+    
+    config = FacturasService.obtener_config_empresa(padre_id)
+    tasas = TasasService.obtener_tasas(padre_id)
+    tasa_activa = float(tasas.get(tasas.get('activa', 'oficial'), 0))
+    
+    return render_template('user/factura_template.html',
+        factura=factura,
+        ventas=ventas,
+        config=config,
+        tasas=tasas,
+        tasa_activa=tasa_activa,
+        vendedor_nombre=current_user.nombre
+    )
 
-    if not factura:
-        return '<div style="padding:2rem;color:#dc2626;font-family:sans-serif;text-align:center;"><h2>Factura no encontrada</h2><p>No tienes acceso a esta factura.</p></div>', 404
-
-    if not factura.nro_factura:
-        return '<div style="padding:2rem;color:#dc2626;font-family:sans-serif;text-align:center;"><h2>Factura sin numero</h2></div>', 404
-
-    filename = f"factura_{factura.nro_factura.replace('/', '-')}_{padre_id}.html"
-    facturas_dir = current_app.config.get("FACTURAS_DIR", "facturas")
-    filepath = os.path.join(facturas_dir, filename)
-
-    if not os.path.exists(filepath):
-        patron = os.path.join(facturas_dir, f"*{factura.nro_factura.replace('/', '-')}*.html")
-        matches = glob.glob(patron)
-        if matches:
-            filepath = matches[0]
-        else:
-            return f'<div style="padding:2rem;color:#dc2626;font-family:sans-serif;text-align:center;"><h2>Archivo no encontrado</h2><p>{filename}</p></div>', 404
-
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return f.read()
-
-# ============================================================
-# ABONAR FACTURA (para vendedores con permiso)
-# ============================================================
 @vendedor_bp.route('/factura/<int:factura_id>/abonar', methods=['POST'])
 def abonar_factura(factura_id):
     """Registra un abono a una factura."""

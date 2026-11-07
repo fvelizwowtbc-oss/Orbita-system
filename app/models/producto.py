@@ -52,13 +52,13 @@ class Producto(db.Model):
 
     @property
     def imagen_url(self):
-        """Devuelve la URL de la imagen principal.
-
-        Usa /uploads/ (ruta dinamica) que funciona tanto en script
-        como en .exe (donde la carpeta esta en %APPDATA%).
-        """
-        if self.imagen_principal:
-            return f'/uploads/{self.usuario_id}/{self.imagen_principal}'
+        if not self.imagen_principal:
+            return None
+        # Si ya es URL de internet, devolverla tal cual (limpia)
+        if self.imagen_principal.startswith('http://') or self.imagen_principal.startswith('https://'):
+            return self.imagen_principal
+        # Si es un archivo local, agregar la ruta
+        return f'/uploads/{self.usuario_id}/{self.imagen_principal}'
         return None
 
     @property

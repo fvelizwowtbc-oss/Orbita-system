@@ -157,12 +157,4 @@ table.items tbody tr:hover {{ background: #f8fafc; }}
 </body>
 </html>'''
 
-        facturas_dir = current_app.config.get("FACTURAS_DIR", "facturas")
-        os.makedirs(facturas_dir, exist_ok=True)
-        filename = f'factura_{nro.replace("/", "-")}_{usuario_id}.html'
-        filepath = os.path.join(facturas_dir, filename)
-
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(html)
-
-        return filename
+        return nro.replace('/', '-')

@@ -1193,20 +1193,51 @@ def producto_datos(producto_id):
 
 @user_bp.route('/factura/<int:factura_id>/ver-modal')
 def ver_factura_modal(factura_id):
+    from ..models.factura import FacturaCobrar
+    from ..models.venta import Venta
+    from ..services.facturas import FacturasService
+    from ..services.tasas import TasasService
+    
     factura = FacturaCobrar.query.filter_by(id=factura_id, usuario_id=current_user.id).first_or_404()
-    if not factura.nro_factura:
-        return '<p style="color:red;padding:20px">Factura sin níºmero</p>', 404
     
-    filename = f"factura_{factura.nro_factura.replace('/', '-')}_{current_user.id}.html"
-    facturas_dir = current_app.config.get("FACTURAS_DIR", "facturas")
-    filepath = os.path.join(facturas_dir, filename)
+    # Traer todas las ventas de esa factura
+    ventas = Venta.query.filter_by(nro_factura=factura.nro_factura, usuario_id=current_user.id).all()
     
-    if not os.path.exists(filepath):
-        return f'<p style="color:red;padding:20px">Archivo de factura no encontrado: {filename}</p>', 404
+    # Traer configuración y tasas
+    config = FacturasService.obtener_config_empresa(current_user.id)
+    tasas = TasasService.obtener_tasas(current_user.id)
+    tasa_activa = float(tasas.get(tasas.get('activa', 'oficial'), 0))
     
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return f.read()
+    return render_template('user/factura_template.html',
+        factura=factura,
+        ventas=ventas,
+        config=config,
+        tasas=tasas,
+        tasa_activa=tasa_activa,
+        vendedor_nombre=current_user.nombre
+    )
 
+def ver_factura_modal(factura_id):
+    from ..models.factura import FacturaCobrar
+    from ..models.venta import Venta
+    from ..services.facturas import FacturasService
+    from ..services.tasas import TasasService
+    
+    factura = FacturaCobrar.query.filter_by(id=factura_id, usuario_id=current_user.id).first_or_404()
+    ventas = Venta.query.filter_by(nro_factura=factura.nro_factura, usuario_id=current_user.id).all()
+    
+    config = FacturasService.obtener_config_empresa(current_user.id)
+    tasas = TasasService.obtener_tasas(current_user.id)
+    tasa_activa = float(tasas.get(tasas.get('activa', 'oficial'), 0))
+    
+    return render_template('user/factura_template.html',
+        factura=factura,
+        ventas=ventas,
+        config=config,
+        tasas=tasas,
+        tasa_activa=tasa_activa,
+        vendedor_nombre=current_user.nombre
+    )
 
 @user_bp.route('/cambiar-modo-tasa', methods=['POST'])
 def cambiar_modo_tasa_route():

@@ -72,9 +72,14 @@ class InventarioService:
             if 'imagen_producto' in files:
                 img = files['imagen_producto']
                 if img and img.filename:
-                    nombre_img = guardar_imagen_producto(img, usuario_id, producto.id, upload_folder)
-                    if nombre_img:
-                        producto.imagen_principal = nombre_img
+                    from .imagekit_service import ImageKitService
+                    url_nube = ImageKitService.subir_imagen(img)
+                    if url_nube:
+                        producto.imagen_principal = url_nube
+                    else:
+                        nombre_img = guardar_imagen_producto(img, usuario_id, producto.id, upload_folder)
+                        if nombre_img:
+                            producto.imagen_principal = nombre_img
 
             # Guardar variantes si tiene
             if tiene_variantes:
@@ -187,10 +192,15 @@ class InventarioService:
         if 'imagen_producto' in files:
             img = files['imagen_producto']
             if img and img.filename:
-                eliminar_imagenes_producto(producto.usuario_id, producto.id, upload_folder)
-                nombre = guardar_imagen_producto(img, producto.usuario_id, producto.id, upload_folder)
-                if nombre:
-                    producto.imagen_principal = nombre
+                from .imagekit_service import ImageKitService
+                url_nube = ImageKitService.subir_imagen(img)
+                if url_nube:
+                    producto.imagen_principal = url_nube
+                else:
+                    eliminar_imagenes_producto(producto.usuario_id, producto.id, upload_folder)
+                    nombre = guardar_imagen_producto(img, producto.usuario_id, producto.id, upload_folder)
+                    if nombre:
+                        producto.imagen_principal = nombre
 
         # Procesar variantes
         if tiene_variantes:
