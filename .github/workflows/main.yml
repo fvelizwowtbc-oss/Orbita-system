@@ -1,0 +1,29 @@
+name: Mantener Render Despierto (8am - 9pm)
+
+on:
+  schedule:
+    # Se ejecuta cada 10 minutos, de 8:00 a 20:50 UTC (aprox 8am-9pm Venezuela)
+    - cron: '*/10 12-23 * * *' 
+  workflow_dispatch: # Permite ejecutarlo manualmente para probar
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping a Render
+        run: |
+          # ⚠️ REEMPLAZA ESTO POR TU URL REAL DE RENDER (incluye el https://)
+          URL="https://orbita-system.onrender.com"
+          
+          # Hacemos el ping silencioso y guardamos el código de respuesta
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          
+          echo "Código de respuesta HTTP: $STATUS"
+          echo "Ping realizado a las $(date)"
+          
+          # Si el código HTTP es 200 (OK) o 502 (Bad Gateway mientras despierta), todo bien.
+          # Si es un error de conexión (000), fallará el script.
+          if [ "$STATUS" -eq 000 ]; then
+            echo "❌ Error: No se pudo conectar a la URL. Verifica que sea correcta."
+            exit 1
+          fi
