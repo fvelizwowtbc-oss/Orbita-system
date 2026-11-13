@@ -1,7 +1,10 @@
 ﻿# app/routes/auth.py
 from werkzeug.utils import secure_filename
 import secrets
+from datetime import datetime, timedelta
+import random
 from flask import Blueprint, session, render_template, redirect, url_for, flash, request
+from flask_mail import Message
 from flask_login import login_user, logout_user, login_required, current_user
 
 from ..extensions import db
@@ -44,8 +47,14 @@ def login():
             return render_template('auth/login.html')
 
         if not user.activo:
-            flash('Usuario inactivo. Contacta al administrador.', 'danger')
-            return render_template('auth/login.html')
+            # Si el usuario no está activo, verificamos si es porque no ha verificado su correo
+            if user.codigo_verificacion is not None:
+                flash('Tu cuenta no ha sido verificada. Por favor, ingresa el código que enviamos a tu correo.', 'info')
+                return redirect(url_for('auth.verificar_codigo', email=user.email))
+            else:
+                # Si no tiene código, es porque el administrador lo desactivó
+                flash('Usuario inactivo. Contacta al administrador.', 'danger')
+                return render_template('auth/login.html')
 
         # ✅ Bloqueo: vendedores cuyo padre no tiene suscripcion vigente
         if getattr(user, 'es_vendedor', False) and user.padre:
@@ -134,6 +143,13 @@ def register():
         try:
             user = Usuario(nombre=nombre, email=email, telefono=telefono)
             user.set_password(password)
+            
+            # Generar código
+            codigo = str(random.randint(100000, 999999))
+            user.codigo_verificacion = codigo
+            user.codigo_expira = datetime.utcnow() + timedelta(minutes=15)
+            user.activo = False
+            
             db.session.add(user)
             db.session.flush()
 
@@ -147,17 +163,27 @@ def register():
             )
             db.session.add(config)
             db.session.commit()
+            
+            # Enviar correo
+            try:
+                from flask import current_app
+                mail = current_app.extensions['mail']
+                msg = Message(
+                    subject="Tu Código de Verificación - Orbita System",
+                    recipients=[email],
+                    body=f"Tu código de verificación es: {codigo}. Expira en 15 minutos."
+                )
+                mail.send(msg)
+                flash('Te hemos enviado un código a tu correo.', 'info')
+            except Exception as mail_e:
+                flash(f'Usuario creado, pero error al enviar correo: {mail_e}', 'warning')
+
         except Exception as e:
             db.session.rollback()
-            # Detectar duplicado a nivel de BD (por si acaso)
-            if 'UNIQUE constraint failed' in str(e).lower() and 'email' in str(e).lower():
-                flash('El email ya está registrado', 'danger')
-            else:
-                flash(f'Error al registrar: {e}', 'danger')
+            flash(f'Error al registrar: {e}', 'danger')
             return render_template('auth/register.html')
 
-        flash('Registro exitoso. Ahora puedes iniciar sesión.', 'success')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.verificar_codigo', email=email))
 
     return render_template('auth/register.html')
 
@@ -179,7 +205,7 @@ def logout():
 # ============================================================
 import os
 import uuid
-from flask import current_app
+from flask import Blueprint, session, render_template, redirect, url_for, flash, request
 
 ALLOWED_PERFIL_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_PERFIL_SIZE = 2 * 1024 * 1024  # 2 MB
@@ -283,3 +309,62 @@ def foto_actual():
             'url': url_for('static', filename=f'uploads/perfiles/{current_user.foto_perfil}'),
         })
     return jsonify({'success': True, 'foto': None, 'url': None})
+
+
+@auth_bp.route('/verificar/<email>', methods=['GET', 'POST'])
+def verificar_codigo(email):
+    user = Usuario.query.filter_by(email=email).first_or_404()
+    
+    if user.activo:
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        codigo_ingresado = request.form.get('codigo', '').strip()
+        
+        from datetime import datetime
+        if user.codigo_verificacion == codigo_ingresado and user.codigo_expira and user.codigo_expira > datetime.utcnow():
+            user.codigo_verificacion = None
+            user.codigo_expira = None
+            user.activo = True
+            db.session.commit()
+            flash('¡Cuenta verificada! Ya puedes iniciar sesión.', 'success')
+            return redirect(url_for('auth.login'))
+        else:
+            flash('Código incorrecto o expirado. Intenta de nuevo.', 'danger')
+            
+    return render_template('auth/verificar_codigo.html', email=email)
+
+
+
+@auth_bp.route('/reenviar-codigo/<email>', methods=['POST'])
+def reenviar_codigo(email):
+    user = Usuario.query.filter_by(email=email).first_or_404()
+    
+    if user.activo:
+        return redirect(url_for('auth.login'))
+        
+    try:
+        import random
+        from datetime import datetime, timedelta
+        from flask_mail import Message
+        from flask import current_app
+        
+        # Generar nuevo código
+        codigo = str(random.randint(100000, 999999))
+        user.codigo_verificacion = codigo
+        user.codigo_expira = datetime.utcnow() + timedelta(minutes=15)
+        db.session.commit()
+        
+        # Enviar correo
+        mail = current_app.extensions['mail']
+        msg = Message(
+            subject="Nuevo Código de Verificación - Orbita System",
+            recipients=[email],
+            body=f"Tu nuevo código de verificación es: {codigo}. Expira en 15 minutos."
+        )
+        mail.send(msg)
+        flash('Hemos enviado un nuevo código a tu correo.', 'success')
+    except Exception as e:
+        flash(f'Error al enviar el correo: {e}', 'danger')
+        
+    return redirect(url_for('auth.verificar_codigo', email=email))

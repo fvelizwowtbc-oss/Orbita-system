@@ -1,56 +1,5 @@
-﻿{% extends 'base.html' %}
-{% block title %}Dashboard {% endblock %}
-<!-- ============================================================
-     WIDGET: Acceso desde movil
-     ============================================================ -->
-{% if ip_local %}
-<div id="widget-ip-local" class="fixed bottom-4 right-4 z-30 group">
-    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-3 flex items-center gap-3 hover:shadow-xl transition-all duration-200 cursor-pointer anim-hover-lift"
-         onclick="copiarURLAcesso()"
-         title="Click para copiar">
-        <div class="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0"> 
-            <i class="fas fa-mobile-alt text-white text-sm"></i>
-        </div>
-        <div class="text-left">
-            <p class="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Acceso desde movil</p>
-            <p class="text-xs font-mono font-semibold text-slate-700">{{ ip_local }}:{{ puerto_local }}</p>
-        </div>
-        <i class="fas fa-copy text-slate-400 group-hover:text-[#1CA7EC] text-xs ml-1 transition-colors"></i>
-    </div>
-</div>
-
-<script>
-function copiarURLAcesso() {
-    const url = "http://{{ ip_local }}:{{ puerto_local }}";
-    navigator.clipboard.writeText(url).then(function() {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: 'Copiado',
-                text: url,
-                timer: 1500,
-                showConfirmButton: false,
-                toast: true,
-                position: 'bottom-end',
-            });
-        } else {
-            alert('Copiado: ' + url);
-        }
-    }).catch(function() {
-        // Fallback si no hay clipboard API
-        const input = document.createElement('input');
-        input.value = url;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        alert('Copiado: ' + url);
-    });
-}
-</script>
-{% endif %}
-
-
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block page_subtitle %}Bienvenido, {{ current_user.nombre.split(' ')[0] }}{% endblock %}
 {% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
@@ -81,9 +30,6 @@ function copiarURLAcesso() {
                     ${{ "%.2f"|format(f.monto_usd or 0) }}
                 </p>
                 {% endfor %}
-                {% if facturas_vencidas_dash|length > 3 %}
-                <p class="text-xs text-red-600 italic">... y {{ facturas_vencidas_dash|length - 3 }} mas</p>
-                {% endif %}
             </div>
             <a href="{{ url_for('user.proveedores_facturas', estado='vencida') }}"
                class="inline-block mt-2 text-xs font-semibold text-red-700 hover:text-red-900 underline">
@@ -116,9 +62,6 @@ function copiarURLAcesso() {
                     ${{ "%.2f"|format(f.monto_usd or 0) }}
                 </p>
                 {% endfor %}
-                {% if facturas_por_vencer_dash|length > 3 %}
-                <p class="text-xs text-amber-600 italic">... y {{ facturas_por_vencer_dash|length - 3 }} mas</p>
-                {% endif %}
             </div>
             <a href="{{ url_for('user.proveedores_facturas', estado='por_vencer') }}"
                class="inline-block mt-2 text-xs font-semibold text-amber-700 hover:text-amber-900 underline">
@@ -131,36 +74,80 @@ function copiarURLAcesso() {
 {% endif %}
 
 <!-- ============================================================
-     TASA BCV - PROMINENTE Y ELEGANTE
+     TARJETA DE LA TASA BCV (Estilo Instagram)
      ============================================================ -->
-<div class="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-6 mb-6 relative overflow-hidden shadow-xl"> 
-    <!-- Elementos decorativos de fondo -->
-    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-    <div class="absolute bottom-0 left-0 w-48 h-48 bg-[#0f172a]/20 rounded-full blur-3xl -ml-16 -mb-16"></div>
+<div class="bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl p-6 mb-6 relative shadow-xl shadow-pink-500/20"> 
     
     <div class="relative flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-5">
-            <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg shadow-black/10 border border-white/20">
+            <!-- Icono -->
+            <div class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
                 <i class="fas fa-exchange-alt text-white text-xl"></i>
             </div>
+            
             <div>
-                <p class="text-xs font-medium text-white/70 uppercase tracking-wider mb-1">
+                <!-- Texto Tasa -->
+                <p class="text-xs font-bold text-white uppercase tracking-wider mb-1">
                     Tasa del día · BCV
                 </p>
                 <div class="flex items-baseline gap-3">
-                    <p class="text-3xl font-bold text-white tracking-tight">
+                    <p class="text-4xl font-extrabold text-white tracking-tight">
                         Bs. {{ "%.2f"|format(tasa_bcv) }}
                     </p>
-                    <span class="text-sm text-slate-300 font-normal">/ USD</span>
+                    <span class="text-sm font-semibold text-white/80">/ USD</span>
                 </div>
             </div>
         </div>
         
-        <button onclick="actualizarTasa()" 
-                class="group flex items-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/10 shadow-lg shadow-black/20">
-            <i class="fas fa-sync-alt transition-transform duration-500 group-hover:rotate-180"></i>
-            <span>Actualizar</span>
-        </button>
+        <!-- Controles de Tasa (Widget y Botón Actualizar) -->
+        <div class="flex items-center gap-3">
+            
+            <!-- WIDGET DE TASA BCV / MANUAL -->
+            <div class="relative z-[9999]" id="widgetTasa">
+                <button type="button" onclick="toggleWidgetTasa()" 
+                        class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/30 hover:bg-white/30 transition text-sm shadow-sm bg-white/20 backdrop-blur-md text-white font-semibold focus:outline-none focus:ring-0">
+                    <i class="fas fa-dollar-sign text-white"></i>
+                    <span class="font-bold text-white" id="tasaMostrada">Bs. {{ "%.2f"|format((tasas.oficial if tasas and tasas.oficial else 50) or 50) }}</span>
+                    <span id="tasaFuente" class="text-[10px] px-1.5 py-0.5 rounded bg-white/20 text-white font-semibold">BCV</span>
+                    <i class="fas fa-chevron-down text-white/70 text-xs"></i>
+                </button>
+                
+                <div id="dropdownTasa" class="hidden absolute right-0 top-full mt-2 w-64 sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-[9999] anim-scale-in">
+                    <h3 class="font-bold text-sm mb-3 text-slate-800">
+                        <i class="fas fa-exchange-alt text-[#dc2743] mr-1"></i> Tasa del sistema
+                    </h3>
+                    
+                    <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer border border-slate-200 mb-2">
+                        <input type="radio" name="modoTasa" value="auto" id="radioAuto" class="mt-0.5" onchange="alCambiarModo()">
+                        <div class="flex-1">
+                            <p class="font-medium text-sm text-slate-800">Automática (BCV)</p>
+                            <p class="text-xs text-slate-500">Se actualiza desde el BCV</p>
+                            <p class="text-xs font-semibold text-[#dc2743] mt-1" id="tasaBCVDisplay">Bs. 0,00</p>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer border border-slate-200">
+                        <input type="radio" name="modoTasa" value="manual" id="radioManual" class="mt-0.5" onchange="alCambiarModo()">
+                        <div class="flex-1">
+                            <p class="font-medium text-sm text-slate-800">Manual</p>
+                            <p class="text-xs text-slate-500">Fija la tasa tú mismo</p>
+                            <input type="number" step="0.01" id="inputTasaManual" min="1" class="mt-2 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" placeholder="Ej: 857.00" disabled>
+                        </div>
+                    </label>
+                    
+                    <button type="button" id="btnGuardarTasa" class="w-full mt-3 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-bold py-2 rounded-xl shadow-md transition hover:opacity-90">
+                        <i class="fas fa-save mr-1"></i> Guardar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Botón Actualizar -->
+            <button onclick="actualizarTasa()" 
+                    class="group flex items-center gap-2 px-5 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-white text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-white/20 shadow-sm">
+                <i class="fas fa-sync-alt transition-transform duration-500 group-hover:rotate-180"></i>
+                <span>Actualizar</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -170,12 +157,12 @@ function copiarURLAcesso() {
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     <!-- TOP 5 CLIENTES (2/3) -->
-    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         
         <!-- Header -->
         <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] rounded-xl flex items-center justify-center shadow-sm shadow-blue-500/20"> 
+                <div class="w-10 h-10 bg-gradient-to-br from-[#1CA7EC] to-[#787FF6] rounded-xl flex items-center justify-center shadow-sm"> 
                     <i class="fas fa-trophy text-white"></i>
                 </div>
                 <div>
@@ -197,27 +184,17 @@ function copiarURLAcesso() {
                 
                 <!-- Ranking -->
                 <div class="flex-shrink-0">
-                    {% if loop.index == 1 %}
-                    <div class="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20"> 
-                        <i class="fas fa-crown text-sm"></i>
+                    <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center font-bold text-sm shadow-sm text-slate-800">
+                        {% if loop.index == 1 %}
+                            <i class="fas fa-crown text-amber-500 text-lg"></i>
+                        {% else %}
+                            {{ loop.index }}
+                        {% endif %}
                     </div>
-                    {% elif loop.index == 2 %}
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20"> 
-                        2
-                    </div>
-                    {% elif loop.index == 3 %}
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0f172a] to-[#1e293b] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20"> 
-                        3
-                    </div>
-                    {% else %}
-                    <div class="w-10 h-10 rounded-xl bg-[#0f172a] flex items-center justify-center text-white font-bold text-sm shadow-sm shadow-slate-900/20">
-                        {{ loop.index }}
-                    </div>
-                    {% endif %}
                 </div>
                 
-                <!-- Avatar -->
-                <div class="w-10 h-10 rounded-full bg-[#0f172a] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-sm shadow-slate-900/20"> 
+                <!-- Avatar del cliente -->
+                <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800 font-bold text-sm flex-shrink-0">
                     {{ c.nombre[0] | upper }}
                 </div>
                 
@@ -262,7 +239,7 @@ function copiarURLAcesso() {
     </div>
 
     <!-- BAJO STOCK (1/3) -->
-    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         
         <!-- Header -->
         <div class="px-5 py-5 border-b border-slate-100">
@@ -327,6 +304,9 @@ function copiarURLAcesso() {
 
 {% block scripts %}
 <script>
+// ============================================================
+// ACTUALIZAR TASA BCV
+// ============================================================
 async function actualizarTasa() {
     try {
         const r = await fetch('/api/tasa/actualizar', {
@@ -364,5 +344,124 @@ async function actualizarTasa() {
         Swal.fire({ icon: 'error', title: 'Error de conexion', text: e.message, confirmButtonColor: '#dc2626' });
     }
 }
+
+// ============================================================
+// WIDGET DE TASA (AUTO / MANUAL)
+// ============================================================
+function toggleWidgetTasa() {
+    var dd = document.getElementById('dropdownTasa');
+    if (dd) dd.classList.toggle('hidden');
+}
+
+function alCambiarModo() {
+    var manual = document.getElementById('radioManual');
+    var input = document.getElementById('inputTasaManual');
+    if (manual && manual.checked && input) {
+        input.disabled = false;
+        input.focus();
+    } else if (input) {
+        input.disabled = true;
+    }
+}
+
+async function guardarModoTasa() {
+    var modoEl = document.querySelector('input[name="modoTasa"]:checked');
+    if (!modoEl) return;
+    
+    var modo = modoEl.value;
+    var tasaManual = null;
+    
+    if (modo === 'manual') {
+        var inputEl = document.getElementById('inputTasaManual');
+        tasaManual = inputEl ? parseFloat(inputEl.value) : null;
+        if (!tasaManual || tasaManual <= 0) {
+            Swal.fire({ icon: 'warning', title: 'Tasa invalida', text: 'Ingresa una tasa mayor a 0', confirmButtonColor: '#f59e0b' });
+            return;
+        }
+    }
+    
+    var btn = document.getElementById('btnGuardarTasa');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
+    
+    var payload = { modo: modo };
+    if (tasaManual !== null) payload.tasa_manual = tasaManual;
+    
+    try {
+        var r = await fetch('/user/cambiar-modo-tasa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify(payload)
+        });
+        var data = await r.json();
+        
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar'; }
+        
+        if (data && data.success) {
+            document.getElementById('dropdownTasa').classList.add('hidden');
+            Swal.fire({ icon: 'success', title: 'Tasa actualizada', text: 'Recargando...', timer: 1500, showConfirmButton: false }).then(() => location.reload());
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: (data && data.error) || 'Error desconocido', confirmButtonColor: '#dc2626' });
+        }
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar'; }
+        Swal.fire({ icon: 'error', title: 'Error de conexion', text: e.message, confirmButtonColor: '#dc2626' });
+    }
+}
+
+// Inicializar el widget al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    var tasaMostrada = document.getElementById('tasaMostrada');
+    var tasaFuente = document.getElementById('tasaFuente');
+    var tasaBcvDisplay = document.getElementById('tasaBCVDisplay');
+    var inputManual = document.getElementById('inputTasaManual');
+    
+    // Valores desde el backend
+    var TASA_BCV_VAL = {{ ((tasas.tasa_bcv if tasas and tasas.tasa_bcv else tasa_bcv) or 50)|float }};
+    var TASA_ACTUAL_VAL = {{ ((tasas.oficial if tasas and tasas.oficial else tasa_bcv) or 50)|float }};
+    var TASA_MANUAL_VAL = {{ ((tasas.tasa_manual_valor if tasas and tasas.tasa_manual_valor else 0) or 0)|float }};
+    var TASA_MODO_VAL = "{{ (tasas.modo_tasa if tasas else 'auto') }}";
+
+    if (tasaMostrada && TASA_ACTUAL_VAL > 0) {
+        tasaMostrada.textContent = 'Bs. ' + TASA_ACTUAL_VAL.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    if (tasaBcvDisplay && TASA_BCV_VAL > 0) {
+        tasaBcvDisplay.textContent = 'Bs. ' + TASA_BCV_VAL.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    if (inputManual && TASA_MANUAL_VAL > 0) {
+        inputManual.value = TASA_MANUAL_VAL.toFixed(2);
+    }
+    
+    if (TASA_MODO_VAL === 'manual') {
+        var rm = document.getElementById('radioManual');
+        if (rm) rm.checked = true;
+        if (inputManual) inputManual.disabled = false;
+        if (tasaFuente) {
+            tasaFuente.textContent = 'Manual';
+            tasaFuente.className = 'text-[10px] px-1.5 py-0.5 rounded bg-white/20 text-white font-semibold';
+        }
+    } else {
+        var ra = document.getElementById('radioAuto');
+        if (ra) ra.checked = true;
+    }
+    
+    // Conectar el botón guardar
+    var btnG = document.getElementById('btnGuardarTasa');
+    if (btnG && !btnG._attached) {
+        btnG._attached = true;
+        btnG.onclick = function(e) {
+            e.preventDefault();
+            guardarModoTasa();
+        };
+    }
+    
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        var widget = document.getElementById('widgetTasa');
+        var dropdown = document.getElementById('dropdownTasa');
+        if (widget && dropdown && !widget.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+});
 </script>
 {% endblock %}

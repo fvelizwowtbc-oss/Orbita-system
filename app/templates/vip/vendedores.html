@@ -21,7 +21,7 @@
 {% block content %}
 
 <!-- Info de limite -->
-<div class="bg-[#0f172a] rounded-2xl p-5 mb-6 text-white flex items-center justify-between">
+<div class="bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 rounded-2xl p-5 mb-6 text-white flex items-center justify-between">
     <div class="flex items-center gap-4">
         <div class="w-12 h-12 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center">
             <i class="fas fa-user-tie text-xl"></i>
@@ -46,7 +46,7 @@
         <div class="p-5 border-b border-slate-100">
             <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-[#0f172a] flex items-center justify-center text-white font-bold text-lg">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 flex items-center justify-center text-white font-bold text-lg">
                         {{ v.vendedor.nombre[0] | upper }}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -157,7 +157,7 @@
 {% else %}
 <!-- Estado vacio -->
 <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-    <div class="w-20 h-20 bg-[#0f172a] rounded-2xl flex items-center justify-center mx-auto mb-4">
+    <div class="w-20 h-20 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
         <i class="fas fa-user-tie text-white text-3xl"></i>
     </div>
     <h3 class="text-xl font-bold text-slate-900 mb-2">No tienes vendedores aún</h3>

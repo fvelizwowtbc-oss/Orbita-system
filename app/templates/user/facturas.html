@@ -17,7 +17,7 @@
             <option value="pendiente" {% if filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
             <option value="pagado" {% if filtro == 'pagado' %}selected{% endif %}>Pagadas</option>
         </select>
-        <button type="submit" class="px-6 py-2 bg-[#0f172a] text-white rounded-lg text-sm" data-ripple>
+        <button type="submit" class="px-6 py-2 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white rounded-lg text-sm" data-ripple>
             <i class="fas fa-search mr-1"></i> Buscar
         </button>
     </form>
@@ -338,7 +338,7 @@ document.addEventListener('keydown', function(e) {
                 <span id="tituloFactura">Factura</span>
             </h3>
             <div class="flex gap-2">
-                <button type="button" onclick="imprimirFactura()" class="px-3 py-1.5 bg-[#0f172a] text-white rounded-lg text-sm" data-ripple>
+                <button type="button" onclick="imprimirFactura()" class="px-3 py-1.5 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white rounded-lg text-sm" data-ripple>
                     <i class="fas fa-print mr-1"></i> Imprimir
                 </button>
                 <button type="button" onclick="cerrarModalFactura()" class="px-3 py-1.5 border rounded-lg text-sm">
@@ -396,7 +396,7 @@ document.addEventListener('keydown', function(e) {
             </div>
             <div class="flex justify-end gap-2 pt-4 border-t">
                 <button type="button" onclick="cerrarAbono()" class="px-4 py-2 border rounded-lg">Cancelar</button>
-                <button type="submit" class="px-6 py-2 bg-[#0f172a] text-white rounded-lg"><i class="fas fa-check mr-1"></i> Registrar</button>
+                <button type="submit" class="px-6 py-2 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white rounded-lg"><i class="fas fa-check mr-1"></i> Registrar</button>
             </div>
         </form>
     </div>

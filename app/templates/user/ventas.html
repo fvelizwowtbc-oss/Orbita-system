@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block title %}Ventas{% endblock %}
 {% block page_title %}Punto de Venta{% endblock %}
 {% block page_subtitle %}{{ stats_mes.ventas }} ventas este mes · ${{ "%.2f"|format(stats_mes.ingresos_usd) }}{% endblock %}
@@ -8,16 +8,15 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+    <!-- COLUMNA IZQUIERDA: PRODUCTOS -->
     <div class="lg:col-span-2 space-y-4">
         <div class="bg-white rounded-xl p-4 shadow-sm border">
             <div class="relative">
                 <input type="text" id="buscadorProductos" placeholder="Buscar o escanear producto..."
                        class="w-full px-4 py-3 pr-14 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none"
                        oninput="filtrarProductos()">
-                <button type="button" onclick="abrirEscanerVentas()"
-                        title="Escanear codigo de barras"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg bg-[#0f172a] hover:bg-[#1e293b] text-white transition" data-ripple>
-                    <i class="fas fa-camera"></i>
+                <button type="button" onclick="abrirEscanerVentas()" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white shadow-md hover:opacity-90 transition">
+                    <i class="fas fa-camera text-white"></i>
                 </button>
             </div>
         </div>
@@ -35,6 +34,7 @@
                      data-precio="{{ p.precio_venta_usd }}"
                      data-stock="{{ p.stock_actual }}"
                      data-tiene-variantes="{{ '1' if tiene_variantes else '0' }}"
+                     data-categoria="{{ p.categoria }}"
                      onclick="agregarDesdeElemento(this)">
                     <div class="flex items-center gap-2 mb-2">
                         {% if p.imagen_url %}
@@ -72,10 +72,11 @@
         </div>
     </div>
 
+    <!-- COLUMNA DERECHA: CARRITO Y ACCIONES -->
     <div class="space-y-4">
         
         <!-- BLOQUE DEL TOTAL GIGANTE -->
-        <div id="bloqueTotal" class="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-2xl p-5 text-white text-center shadow-lg shadow-slate-900/30 sticky top-4 z-20 transition-all duration-300">
+        <div id="bloqueTotal" class="bg-gradient-to-br from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-2xl p-5 text-white shadow-xl shadow-pink-500/20 sticky top-4 z-20 transition-all duration-300">
             <div class="flex items-baseline justify-center gap-1 mb-2">
                 <span class="text-4xl md:text-5xl font-bold tracking-tight" id="totalBs">0,00</span>
                 <span class="text-xl md:text-2xl font-semibold text-white/80">Bs</span>
@@ -290,9 +291,9 @@
                 </div>
             </div>
 
-            <!-- ✅ BOTÓN COBRAR (AHORA SÍ, DENTRO DE LA TARJETA Y AL FINAL) -->
+            <!-- BOTÓN COBRAR -->
             <button onclick="abrirModalPago()" id="btnProcesar"
-                    class="w-full bg-gradient-to-r from-[#0f172a] to-[#1e293b] hover:opacity-95 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-slate-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none mt-2"
+                    class="w-full bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-pink-500/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none mt-2"
                     disabled>
                 <i class="fas fa-cash-register mr-2"></i> COBRAR
             </button>
@@ -304,7 +305,7 @@
 <!-- MODAL DE PAGO Y VUELTO -->
 <div id="modalPago" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[95vh] overflow-y-auto">
-        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#0f172a] to-[#1e293b] rounded-t-2xl sticky top-0">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] rounded-t-2xl sticky top-0">
             <div class="flex justify-between items-center">
                 <div>
                     <h3 class="text-white font-bold text-lg flex items-center gap-2">
@@ -401,7 +402,7 @@
                 <i class="fas fa-arrow-left mr-1"></i> Volver
             </button>
             <button type="button" onclick="confirmarVenta()" id="btnConfirmarVenta"
-                    class="flex-1 bg-gradient-to-r from-[#0f172a] to-[#1e293b] hover:opacity-95 text-white font-semibold px-4 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20">
+                    class="flex-1 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 text-white font-semibold px-4 py-3 rounded-xl transition shadow-lg shadow-pink-500/30">
                 <i class="fas fa-check mr-1"></i> Confirmar
             </button>
         </div>
@@ -435,10 +436,57 @@
     </div>
 </div>
 
+<!-- MODAL DE CARNICERÍA -->
+<div id="modalCarniceria" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden anim-scale-in">
+        <div class="bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] px-6 py-4 flex justify-between items-center">
+            <div>
+                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                    <i class="fas fa-weight"></i> Venta por Peso
+                </h3>
+                <p class="text-xs text-white/80 mt-0.5">¿Cuántos gramos va a llevar?</p>
+            </div>
+            <button type="button" onclick="cerrarModalCarniceria()" class="text-white/80 hover:text-white">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <input type="hidden" id="car_producto_id">
+            <input type="hidden" id="car_precio_usd">
+            <input type="hidden" id="car_nombre">
+            
+            <div class="text-center mb-6">
+                <p class="font-bold text-xl text-slate-800" id="car_nombre_display">Producto</p>
+                <p class="text-sm text-slate-500 mt-1">Precio por Kilogramo: <span class="font-semibold text-[#dc2743]" id="car_precio_display">$0.00</span></p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2 text-center">Ingresa los gramos</label>
+                <div class="relative">
+                    <input type="number" id="car_gramos" min="1" placeholder="Ej: 500" 
+                           class="w-full pl-4 pr-16 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl text-3xl font-bold text-center text-slate-800 focus:border-[#dc2743] outline-none transition"
+                           oninput="calcularTotalCarniceria()">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">gramos</span>
+                </div>
+            </div>
+
+            <div class="mt-6 bg-slate-50 rounded-xl p-4 border border-slate-200 flex justify-between items-center">
+                <span class="text-sm font-semibold text-slate-600">Total a cobrar:</span>
+                <span class="text-2xl font-extrabold text-emerald-600" id="car_total_display">$0.00</span>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="cerrarModalCarniceria()" class="flex-1 py-3 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition">Cancelar</button>
+                <button type="button" onclick="agregarAlCarritoDesdeModal()" class="flex-1 py-3 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white rounded-xl font-bold shadow-lg shadow-pink-500/30 transition hover:opacity-90">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<!-- <script src="{{ url_for('static', filename='js/autofocus_scanner.js') }}" defer></script> (deshabilitado por autofocus inteligente) -->
 <script src="{{ url_for('static', filename='vendor/sweetalert2.all.min.js') }}"></script>
 <script>
 function toastError(msg) {
@@ -482,6 +530,73 @@ document.addEventListener('DOMContentLoaded', function () {
     if (selMetodo) selMetodo.addEventListener('change', toggleCashea);
 });
 
+// ============================================================
+// FUNCIONES DE CARNICERÍA
+// ============================================================
+function abrirModalCarniceria(id, nombre, precio) {
+    var inputId = document.getElementById('car_producto_id');
+    if (!inputId) {
+        console.error('Error crítico: No se encontró el input car_producto_id. ¿El modal está en el HTML?');
+        return;
+    }
+    
+    inputId.value = id;
+    document.getElementById('car_precio_usd').value = precio;
+    document.getElementById('car_nombre').value = nombre;
+    document.getElementById('car_nombre_display').textContent = nombre;
+    document.getElementById('car_precio_display').textContent = '$' + precio.toFixed(2);
+    document.getElementById('car_gramos').value = '';
+    document.getElementById('car_total_display').textContent = '$0.00';
+    document.getElementById('modalCarniceria').classList.remove('hidden');
+    setTimeout(() => document.getElementById('car_gramos').focus(), 100);
+}
+
+function cerrarModalCarniceria() {
+    var modal = document.getElementById('modalCarniceria');
+    if (modal) modal.classList.add('hidden');
+}
+
+function calcularTotalCarniceria() {
+    var gramos = parseFloat(document.getElementById('car_gramos').value) || 0;
+    var precioKg = parseFloat(document.getElementById('car_precio_usd').value) || 0;
+    var total = (gramos / 1000) * precioKg;
+    document.getElementById('car_total_display').textContent = '$' + total.toFixed(2);
+}
+
+function agregarAlCarritoDesdeModal() {
+    var id = parseInt(document.getElementById('car_producto_id').value);
+    var nombre = document.getElementById('car_nombre').value;
+    var precioKg = parseFloat(document.getElementById('car_precio_usd').value);
+    var gramos = parseFloat(document.getElementById('car_gramos').value);
+
+    if (!gramos || gramos <= 0) {
+        Swal.fire({ icon: 'warning', title: 'Gramos inválidos', text: 'Ingresa un peso mayor a 0', confirmButtonColor: '#dc2743' });
+        return;
+    }
+
+    var precioProporcional = (gramos / 1000) * precioKg;
+    var nombreFinal = nombre + ' (' + gramos + 'g)';
+    var existente = carrito.find(function (i) { return i.producto_id === id && i.es_carniceria && i.gramos === gramos; });
+
+    if (existente) {
+        existente.cantidad++;
+    } else {
+        carrito.push({ 
+            producto_id: id, 
+            variante_id: null, 
+            nombre: nombreFinal, 
+            precio_usd: precioProporcional, 
+            cantidad: 1, 
+            stock: 9999,
+            es_carniceria: true,
+            gramos: gramos
+        });
+    }
+    
+    cerrarModalCarniceria();
+    renderCarrito();
+}
+
 function agregarDesdeElemento(el) {
     var id = parseInt(el.getAttribute('data-id'));
     var nombreEl = el.querySelector('p.font-medium');
@@ -489,13 +604,24 @@ function agregarDesdeElemento(el) {
     var precio = parseFloat(el.getAttribute('data-precio'));
     var stock = parseInt(el.getAttribute('data-stock'));
     var tieneVariantes = el.getAttribute('data-tiene-variantes') === '1';
+    
+    var categoriaRaw = el.getAttribute('data-categoria') || '';
+    var categoria = categoriaRaw.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     if (isNaN(id) || isNaN(precio)) { toastError('Datos del producto invalidos'); return; }
 
-    if (tieneVariantes) { abrirModalVariante(id, nombre); }
-    else { agregarAlCarrito(id, nombre, precio, stock, null, null); }
+    if (categoria === 'carniceria') {
+        abrirModalCarniceria(id, nombre, precio);
+    } else if (tieneVariantes) {
+        abrirModalVariante(id, nombre);
+    } else {
+        agregarAlCarrito(id, nombre, precio, stock, null, null);
+    }
 }
 
+// ============================================================
+// CARRITO Y VARIANTES
+// ============================================================
 function agregarAlCarrito(id, nombre, precio, stock, varianteId, nombreVariante) {
     var vid = varianteId || null;
     var nombreFinal = nombreVariante ? (nombre + ' — ' + nombreVariante) : nombre;
@@ -551,7 +677,6 @@ function renderCarrito() {
     var cont = document.getElementById('carrito');
     if (!cont) return;
     
-    // ✅ FIX: Guardar el foco ANTES de re-renderizar
     var _activeEl = document.activeElement;
     var _activeId = _activeEl ? _activeEl.id : null;
     var _selStart = (_activeEl && _activeEl.selectionStart !== undefined) ? _activeEl.selectionStart : null;
@@ -601,7 +726,6 @@ function renderCarrito() {
     if (document.getElementById('panelCashea') && !document.getElementById('panelCashea').classList.contains('hidden')) { actualizarPreviewCashea(); }
     if (typeof actualizarSaldoPendiente === 'function') actualizarSaldoPendiente();
     
-    // ✅ FIX: Restaurar el foco si se perdio
     if (_activeId) {
         var _el2 = document.getElementById(_activeId);
         if (_el2 && _el2 !== document.activeElement) {
@@ -691,7 +815,6 @@ function actualizarSaldoPendiente() {
 }
 function calcularTotalCarrito() { var total = 0; carrito.forEach(function (item) { total += item.cantidad * item.precio_usd; }); return total; }
 
-// ✅ FIX: Helper de debounce para no re-renderizar en cada tecla
 function _debounce(fn, delay) {
     var timer = null;
     return function() {
@@ -737,7 +860,6 @@ function actualizarPreviewCashea() {
     var elInicial = document.getElementById('preview_inicial');
     if (!elInicial) return;
     
-    // ✅ FIX: Guardar el foco ANTES de tocar el DOM
     var _activeEl = document.activeElement;
     var _activeId = _activeEl ? _activeEl.id : null;
     var _selStart = (_activeEl && _activeEl.selectionStart !== undefined) ? _activeEl.selectionStart : null;
@@ -754,7 +876,6 @@ function actualizarPreviewCashea() {
     document.getElementById('preview_cuotas_label').textContent = label;
     document.getElementById('preview_monto_cuota').textContent = '$' + montoCuota.toFixed(2);
     
-    // ✅ FIX: Restaurar el foco si se perdio
     if (_activeId) {
         var _el = document.getElementById(_activeId);
         if (_el && _el !== document.activeElement) {
@@ -918,153 +1039,67 @@ document.addEventListener('DOMContentLoaded', function () { var elTasa = documen
 
 <!-- ════════════════════════════════════════════════════════════ -->
 <!-- AUTOFOCUS INTELIGENTE -->
-<!-- Solo enfoca el buscador si el usuario NO esta escribiendo  -->
-<!-- en otro campo (Cashea, cliente, cantidad, etc.)            -->
 <!-- ════════════════════════════════════════════════════════════ -->
 <script>
 (function() {
     'use strict';
     
-    // Campos donde el autofocus NO debe actuar
     var CAMPOS_PROTEGIDOS = [
-        'cashea_nombre',
-        'cashea_cedula',
-        'cashea_telefono',
-        'cashea_porcentaje',
-        'cashea_cuotas',
-        'clienteVenta',
-        'metodoPago',
-        'montoInicial',
-        'montoInicialBs',
-        'buscadorProductos',  // el propio buscador
-        'pagaUsd',
-        'pagaBs',
+        'cashea_nombre', 'cashea_cedula', 'cashea_telefono', 'cashea_porcentaje', 'cashea_cuotas',
+        'clienteVenta', 'metodoPago', 'montoInicial', 'montoInicialBs', 'buscadorProductos', 'pagaUsd', 'pagaBs'
     ];
     
-    // Tags donde NUNCA se debe robar el foco
     var TAGS_PROTEGIDOS = ['INPUT', 'SELECT', 'TEXTAREA'];
     
     function _debeEnfocarBuscador() {
         var el = document.activeElement;
-        
-        // Si no hay foco → SI enfocar
-        if (!el || el === document.body) {
-            return true;
-        }
-        
-        // Si el foco está en un campo protegido por ID → NO enfocar
-        if (el.id && CAMPOS_PROTEGIDOS.indexOf(el.id) !== -1) {
-            return false;
-        }
-        
-        // Si el foco está en CUALQUIER input/select/textarea → NO enfocar
-        // (a menos que ya sea el buscador)
-        if (TAGS_PROTEGIDOS.indexOf(el.tagName) !== -1) {
-            return false;
-        }
-        
-        // Si el foco está en un botón → NO enfocar
-        if (el.tagName === 'BUTTON') {
-            return false;
-        }
-        
-        // Si el foco está en un link → NO enfocar
-        if (el.tagName === 'A') {
-            return false;
-        }
-        
-        // Si el foco está en un modal abierto → NO enfocar
-        var modal = el.closest ? el.closest('.fixed.inset-0') : null;
-        if (modal) {
-            return false;
-        }
-        
-        // Cualquier otro caso raro → NO enfocar (ser conservador)
+        if (!el || el === document.body) return true;
+        if (el.id && CAMPOS_PROTEGIDOS.indexOf(el.id) !== -1) return false;
+        if (TAGS_PROTEGIDOS.indexOf(el.tagName) !== -1) return false;
+        if (el.tagName === 'BUTTON' || el.tagName === 'A') return false;
+        if (el.closest && el.closest('.fixed.inset-0')) return false;
         return false;
     }
     
     function _enfocarBuscadorSiSeguro() {
         if (!_debeEnfocarBuscador()) return;
-        
         var buscador = document.getElementById('buscadorProductos');
         if (!buscador) return;
         if (document.activeElement === buscador) return;
-        
-        try {
-            buscador.focus();
-        } catch(e) {}
+        try { buscador.focus(); } catch(e) {}
     }
     
-    // Exponer global
-    window._autofocusInteligente = {
-        activo: true,
-        enfocarSiSeguro: _enfocarBuscadorSiSeguro,
-        debeEnfocar: _debeEnfocarBuscador,
-    };
+    window._autofocusInteligente = { activo: true, enfocarSiSeguro: _enfocarBuscadorSiSeguro, debeEnfocar: _debeEnfocarBuscador };
     
-    // ============================================================
-    // AUTOFOCUS INICIAL (al cargar la pagina)
-    // ============================================================
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(_enfocarBuscadorSiSeguro, 300);
-        });
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(_enfocarBuscadorSiSeguro, 300); });
     } else {
         setTimeout(_enfocarBuscadorSiSeguro, 300);
     }
     
-    // ============================================================
-    // AUTOFOCUS por escaneo: si el usuario tipea y NO esta en un campo
-    // ============================================================
-    var _bufferScan = '';
-    var _timerScan = null;
-    
     document.addEventListener('keydown', function(e) {
-        // Ignorar si el usuario esta en un campo protegido
         if (!_debeEnfocarBuscador()) return;
-        
-        // Ignorar teclas de control
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         if (e.key === 'Shift' || e.key === 'Tab' || e.key === 'Escape') return;
-        if (e.key.length !== 1) return;  // solo caracteres imprimibles
-        
-        // Estamos fuera de un campo → redirigir al buscador
+        if (e.key.length !== 1) return;
         var buscador = document.getElementById('buscadorProductos');
         if (!buscador) return;
-        
-        // Enfocar y agregar el caracter
         buscador.focus();
-        
-        // Dejar que el navegador procese el caracter normalmente
-        // (no llamar preventDefault)
-    }, true);  // capture=true para detectar ANTES que otros listeners
+    }, true);
     
-    // ============================================================
-    // TRUCO: al hacer click en el fondo, volver a enfocar buscador
-    // ============================================================
     document.addEventListener('click', function(e) {
-        // Si el click fue en un elemento interactivo, no hacer nada
         var t = e.target;
         if (!t) return;
-        
-        // Si el click fue en input/select/textarea/button/a → no hacer nada
         if (TAGS_PROTEGIDOS.indexOf(t.tagName) !== -1) return;
         if (t.tagName === 'BUTTON' || t.tagName === 'A') return;
-        if (t.closest && t.closest('.fixed.inset-0')) return;  // modal
+        if (t.closest && t.closest('.fixed.inset-0')) return;
         if (t.closest && t.closest('form')) return;
-        
-        // Si el click fue en un producto o en el fondo → reenfocar buscador
-        // (con un pequeño delay para no interferir con el click del producto)
         setTimeout(function() {
             if (document.activeElement === document.body || !document.activeElement) {
                 _enfocarBuscadorSiSeguro();
             }
         }, 50);
     });
-    
-    console.log('[autofocus-inteligente] Instalado');
 })();
 </script>
-<!-- ════════════════════════════════════════════════════════════ -->
-
 {% endblock %}

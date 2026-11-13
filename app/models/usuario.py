@@ -39,6 +39,10 @@ class Usuario(UserMixin, db.Model):
 
     # ✅ PIN de cancelacion (solo el VIP puede configurarlo)
     pin_cancelacion_hash = db.Column(db.String(500), nullable=True)
+    
+    # ✅ Campos para verificación por correo
+    codigo_verificacion = db.Column(db.String(6), nullable=True)
+    codigo_expira = db.Column(db.DateTime, nullable=True)
 
     # ✅ Relación auto-referencial con foreign_keys explícito
     vendedores = db.relationship(

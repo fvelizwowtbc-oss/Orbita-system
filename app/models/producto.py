@@ -48,6 +48,16 @@ class Producto(db.Model):
 
     @property
     def valor_inventario_usd(self):
+        # Si tiene variantes, calculamos el valor sumando (precio_variante * stock_variante)
+        variantes = self.variantes.all()
+        if variantes:
+            total = 0
+            for v in variantes:
+                # Si la variante no tiene precio propio, hereda el del padre (o usa 0)
+                precio = float(v.precio_venta_usd) if v.precio_venta_usd else float(self.precio_venta_usd or 0)
+                total += precio * v.stock_actual
+            return total
+        # Si no tiene variantes, usa el cálculo normal
         return float(self.precio_venta_usd or 0) * self.stock_actual
 
     @property

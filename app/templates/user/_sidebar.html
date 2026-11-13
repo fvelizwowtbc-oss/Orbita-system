@@ -1,62 +1,60 @@
-<a href="{{ url_for('user.dashboard') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.dashboard' %}active{% endif %}">
-    <i class="fas fa-chart-line"></i>
+<a href="{{ url_for('user.dashboard') }}" class="drawer-link {% if request.endpoint == 'user.dashboard' %}active{% endif %}">
+    <i class="fas fa-chart-pie"></i>
     <span>Dashboard</span>
 </a>
 
-<a href="{{ url_for('user.inventario') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.inventario' %}active{% endif %}">
-    <i class="fas fa-boxes"></i>
+<a href="{{ url_for('user.inventario') }}" class="drawer-link {% if request.endpoint == 'user.inventario' %}active{% endif %}">
+    <i class="fas fa-box"></i>
     <span>Inventario</span>
 </a>
 
-<a href="{{ url_for('user.ventas') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.ventas' %}active{% endif %}">
-    <i class="fas fa-shopping-cart"></i>
+<a href="{{ url_for('user.ventas') }}" class="drawer-link {% if request.endpoint == 'user.ventas' %}active{% endif %}">
+    <i class="fas fa-shopping-bag"></i>
     <span>Ventas</span>
 </a>
 
-<a href="{{ url_for('user.facturas') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.facturas' %}active{% endif %}">
-    <i class="fas fa-file-invoice-dollar"></i>
+<a href="{{ url_for('user.facturas') }}" class="drawer-link {% if request.endpoint == 'user.facturas' %}active{% endif %}">
+    <i class="fas fa-file-invoice"></i>
     <span>Facturas</span>
 </a>
 
-<a href="{{ url_for('user.cashea_listado') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.cashea_listado' %}active{% endif %}">
+<a href="{{ url_for('user.cashea_listado') }}" class="drawer-link {% if request.endpoint == 'user.cashea_listado' %}active{% endif %}">
     <i class="fas fa-hand-holding-usd"></i>
     <span>Cashea</span>
 </a>
 
-<a href="{{ url_for('user.gastos_listado') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.gastos_listado' %}active{% endif %}">
-    <i class="fas fa-money-bill-wave"></i>
+<a href="{{ url_for('user.gastos_listado') }}" class="drawer-link {% if request.endpoint == 'user.gastos_listado' %}active{% endif %}">
+    <i class="fas fa-wallet"></i>
     <span>Gastos</span>
 </a>
 
-<a href="{{ url_for('user.proveedores_facturas') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.proveedores_facturas' %}active{% endif %}">
+<a href="{{ url_for('user.proveedores_facturas') }}" class="drawer-link {% if request.endpoint == 'user.proveedores_facturas' %}active{% endif %}">
     <i class="fas fa-truck"></i>
     <span>Proveedores</span>
 </a>
 
-<a href="{{ url_for('user.clientes') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.clientes' %}active{% endif %}">
+<a href="{{ url_for('user.clientes') }}" class="drawer-link {% if request.endpoint == 'user.clientes' %}active{% endif %}">
     <i class="fas fa-users"></i>
     <span>Clientes</span>
 </a>
 
-<a href="{{ url_for('user.reportes') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.reportes' %}active{% endif %}">
-    <i class="fas fa-chart-bar"></i>
+<a href="{{ url_for('user.reportes') }}" class="drawer-link {% if request.endpoint == 'user.reportes' %}active{% endif %}">
+    <i class="fas fa-chart-line"></i>
     <span>Reportes</span>
 </a>
 
-<a href="{{ url_for('user.caja') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'user.caja' %}active{% endif %}">
+<a href="{{ url_for('user.caja') }}" class="drawer-link {% if request.endpoint == 'user.caja' %}active{% endif %}">
     <i class="fas fa-cash-register"></i>
     <span>Caja</span>
 </a>
 
 {% if current_user.suscripcion_vigente %}
-
-
-<a href="{{ url_for('vip.scanners_lista') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint == 'vip.scanners_lista' %}active{% endif %}">
+<a href="{{ url_for('vip.scanners_lista') }}" class="drawer-link {% if request.endpoint == 'vip.scanners_lista' %}active{% endif %}">
     <i class="fas fa-tablet-alt"></i>
     <span>Scanners Pasillo</span>
 </a>
 
-<a href="{{ url_for('vip.lista') }}" class="sidebar-link flex items-center gap-3 {% if request.endpoint and 'vip.' in request.endpoint %}active{% endif %}" title="Mis Vendedores">
+<a href="{{ url_for('vip.lista') }}" class="drawer-link {% if request.endpoint == 'vip.lista' %}active{% endif %}">
     <i class="fas fa-user-tie"></i>
     <span>Mis Vendedores</span>
 </a>

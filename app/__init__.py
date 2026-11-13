@@ -8,6 +8,7 @@ from werkzeug.exceptions import HTTPException
 
 from config import config
 from .extensions import db, login_manager, csrf
+from flask_mail import Mail
 
 
 def create_app(config_name='default'):
@@ -26,6 +27,7 @@ def create_app(config_name='default'):
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    mail = Mail(app)
 
     # Configurar logging
     _setup_logging(app)
@@ -105,6 +107,7 @@ def create_app(config_name='default'):
 
         return response
 
+    app.mail = mail
     return app
 
 def _setup_logging(app):

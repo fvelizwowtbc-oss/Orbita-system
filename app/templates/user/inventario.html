@@ -6,12 +6,12 @@
 
 {% block header_actions %}
 <div class="flex items-center gap-2 flex-wrap">
-    <button onclick="abrirModalProducto()" class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-4 py-2 rounded-lg text-sm font-medium transition" data-ripple>
+    <button onclick="abrirModalProducto()" class="bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition" data-ripple>
         <i class="fas fa-plus mr-1"></i> Nuevo Producto
     </button>
 
     <div class="relative" x-data="{ open: false }">
-        <button onclick="toggleMenuExcel(event)" class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1">
+        <button onclick="toggleMenuExcel(event)" class="bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1">
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
             <i class="fas fa-chevron-down text-xs ml-1"></i>
@@ -72,7 +72,7 @@
                        class="w-full px-4 py-2 pr-11 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1CA7EC] outline-none">
                 <button type="button" onclick="abrirEscaner('inventario')"
                         title="Escanear codigo de barras"
-                        class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md bg-[#0f172a] hover:bg-[#1e293b] text-white transition" data-ripple>
+                        class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white transition" data-ripple>
                     <i class="fas fa-camera text-xs"></i>
                 </button>
             </div>
@@ -93,7 +93,7 @@
             Solo bajo stock
         </label>
         <div class="flex gap-2">
-            <button type="submit" class="flex-1 bg-[#0f172a] hover:bg-[#1e293b] text-white py-2 rounded-lg text-sm" data-ripple>
+            <button type="submit" class="flex-1 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white py-2 rounded-lg text-sm" data-ripple>
                 <i class="fas fa-search mr-1"></i> Filtrar
             </button>
             <a href="{{ url_for('user.inventario') }}" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm">
@@ -201,7 +201,7 @@
     <div class="text-center py-16">
         <i class="fas fa-box-open text-slate-300 text-5xl mb-4"></i>
         <p class="text-slate-500">No hay productos</p>
-        <button onclick="abrirModalProducto()" class="mt-4 bg-[#0f172a] text-white px-4 py-2 rounded-lg text-sm" data-ripple>
+        <button onclick="abrirModalProducto()" class="mt-4 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white px-4 py-2 rounded-lg text-sm" data-ripple>
             <i class="fas fa-plus mr-1"></i> Agregar el primero
         </button>
     </div>
@@ -232,7 +232,7 @@
                                class="w-full px-4 py-2 pr-11 border rounded-lg focus:ring-2 focus:ring-[#1CA7EC] outline-none">
                         <button type="button" onclick="escanearParaCodigo()"
                                 title="Escanear codigo de barras"
-                                class="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-md bg-[#0f172a] hover:bg-[#1e293b] text-white transition" data-ripple>
+                                class="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-md bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white transition" data-ripple>
                             <i class="fas fa-camera text-sm"></i>
                         </button>
                     </div>
@@ -314,7 +314,7 @@
                                 <p class="text-xs text-slate-500">Agrega cada variante con su stock propio</p>
                             </div>
                             <button type="button" onclick="agregarVariante()"
-                                    class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-3 py-1.5 rounded-lg text-sm font-medium" data-ripple>
+                                    class="bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white px-3 py-1.5 rounded-lg text-sm font-medium" data-ripple>
                                 <i class="fas fa-plus mr-1"></i> Agregar variante
                             </button>
                         </div>
@@ -330,9 +330,10 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Precio Costo USD
+                <div id="contenedorPrecioGeneral" class="col-span-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">
+                            Precio Costo USD
                         <span class="text-xs text-slate-500">(lo que pagaste)</span>
                     </label>
                     <input type="number" step="0.01" name="precio_costo_usd" id="f_precio_costo_usd"
@@ -381,6 +382,7 @@
                     <label class="block text-sm font-medium mb-1">Stock Mínimo</label>
                     <input type="number" name="stock_minimo" id="f_stock_minimo" value="5" class="w-full px-4 py-2 border rounded-lg">
                 </div>
+                </div>
 
                 <div class="col-span-2">
                     <label class="block text-sm font-medium mb-1">Imagen</label>
@@ -395,7 +397,7 @@
 
             <div class="flex justify-end gap-2 pt-4 border-t">
                 <button type="button" onclick="cerrarModalProducto()" class="px-4 py-2 border rounded-lg">Cancelar</button>
-                <button type="submit" class="px-6 py-2 bg-[#0f172a] hover:bg-[#1e293b] text-white rounded-lg" data-ripple>
+                <button type="submit" class="px-6 py-2 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white rounded-lg" data-ripple>
                     <i class="fas fa-save mr-1"></i> Guardar
                 </button>
             </div>
@@ -424,7 +426,7 @@
             </div>
             <div class="flex justify-end gap-2 pt-4 border-t">
                 <button type="button" onclick="cerrarModalStock()" class="px-4 py-2 border rounded-lg">Cancelar</button>
-                <button type="submit" class="px-6 py-2 bg-[#0f172a] text-white rounded-lg" data-ripple>Aplicar</button>
+                <button type="submit" class="px-6 py-2 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white rounded-lg" data-ripple>Aplicar</button>
             </div>
         </form>
     </div>
@@ -438,6 +440,108 @@
 
 {% block scripts %}
 <script>
+
+    // ============================================================
+    // FUNCIONES DE DESCARGA DE EXCEL
+    // ============================================================
+    async function descargarExcel() {
+        var modo = '{{ "escritorio" if modo_escritorio else "web" }}';
+
+        if (modo === 'escritorio' && window.pywebview && window.pywebview.api) {
+            Swal.fire({
+                title: 'Generando Excel...',
+                html: '<i class="fas fa-file-excel fa-2x text-[#0f172a]"></i>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: function() { Swal.showLoading(); }
+            });
+
+            try {
+                var r = await fetch('/user/inventario/generar-token-excel', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+                });
+                var data = await r.json();
+
+                if (!data.success || !data.token) throw new Error('No se pudo generar el token');
+
+                var result = await window.pywebview.api.descargar_archivo(
+                    '/user/inventario/descargar-con-token/' + data.token,
+                    null
+                );
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Descargado',
+                        html: '<p style="font-size:12px;color:#64748b;word-break:break-all;">' + result.ruta + '</p>',
+                        confirmButtonText: 'Abrir archivo',
+                        showCancelButton: true,
+                        cancelButtonText: 'Cerrar',
+                        confirmButtonColor: '#10b981',
+                    }).then(function(r) {
+                        if (r.isConfirmed) window.pywebview.api.abrir_archivo_descarga(result.ruta);
+                    });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error al descargar', text: result.error || 'Error desconocido' });
+                }
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message || e });
+            }
+        } else {
+            window.location.href = '{{ url_for("user.exportar_excel") }}';
+        }
+    }
+
+    async function descargarPlantilla() {
+        var modo = '{{ "escritorio" if modo_escritorio else "web" }}';
+
+        if (modo === 'escritorio' && window.pywebview && window.pywebview.api) {
+            Swal.fire({
+                title: 'Generando plantilla...',
+                html: '<i class="fas fa-file-alt fa-2x text-amber-500"></i>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: function() { Swal.showLoading(); }
+            });
+
+            try {
+                var r = await fetch('/user/inventario/generar-token-plantilla', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+                });
+                var data = await r.json();
+
+                if (!data.success || !data.token) throw new Error('No se pudo generar el token');
+
+                var result = await window.pywebview.api.descargar_archivo(
+                    '/user/inventario/descargar-con-token/' + data.token,
+                    'plantilla_inventario.xlsx'
+                );
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Plantilla descargada',
+                        html: '<p style="font-size:12px;color:#64748b;word-break:break-all;">' + result.ruta + '</p>',
+                        confirmButtonText: 'Abrir archivo',
+                        showCancelButton: true,
+                        cancelButtonText: 'Cerrar',
+                        confirmButtonColor: '#10b981',
+                    }).then(function(r) {
+                        if (r.isConfirmed) window.pywebview.api.abrir_archivo_descarga(result.ruta);
+                    });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Error desconocido' });
+                }
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message || e });
+            }
+        } else {
+            window.location.href = '{{ url_for("user.plantilla_excel") }}';
+        }
+    }
+
 // ============================================================
 // HELPERS: Toast con SweetAlert2
 // ============================================================
@@ -458,6 +562,7 @@ function toastSuccess(msg) {
 }
 
 const CATEGORIAS_MARCAS = {
+    'Carniceria': ['Propia', 'Otra Marca'],
     'Repuestos Moto': ['Bera', 'Empire Keeway', 'Hero', 'Honda', 'Kawasaki', 'Suzuki', 'TVS', 'Yamaha', 'AKT', 'Bajaj', 'Motocar', 'Otra Marca'],
     'Electrónica': ['Samsung', 'LG', 'Sony', 'Apple', 'Xiaomi', 'Huawei', 'Panasonic', 'Philips', 'HP', 'Dell', 'Lenovo', 'Asus', 'Acer', 'JBL', 'Logitech', 'Otra Marca'],
     'Hogar': ['Oster', 'Hamilton Beach', 'Black+Decker', 'Philips', 'Mabe', 'Whirlpool', 'LG', 'Samsung', 'Imusa', 'Otra Marca'],
@@ -612,21 +717,26 @@ function toggleVariantes() {
     var check = document.getElementById('tieneVariantes');
     var seccion = document.getElementById('seccionVariantes');
     var stockInput = document.getElementById('f_stock_actual');
-    var stockLabel = stockInput ? stockInput.closest('div') : null;
+    var contenedorPrecios = document.getElementById('contenedorPrecioGeneral');
     
     if (check.checked) {
         seccion.classList.remove('hidden');
+        // Ocultar los precios generales
+        if (contenedorPrecios) contenedorPrecios.classList.add('hidden');
+        
         if (stockInput) {
             stockInput.disabled = true;
             stockInput.classList.add('bg-slate-100', 'text-slate-400');
             stockInput.value = 0;
         }
-        // Si no hay ninguna variante, agregar una vacia
         if (document.querySelectorAll('.variante-row').length === 0) {
             agregarVariante();
         }
     } else {
         seccion.classList.add('hidden');
+        // Mostrar los precios generales
+        if (contenedorPrecios) contenedorPrecios.classList.remove('hidden');
+        
         if (stockInput) {
             stockInput.disabled = false;
             stockInput.classList.remove('bg-slate-100', 'text-slate-400');
@@ -970,7 +1080,7 @@ document.addEventListener('keydown', function(e) {
                 Cancelar
             </button>
             <button type="button" onclick="enviarImportar()" id="btnImportar"
-                    class="px-6 py-2.5 bg-[#0f172a] hover:opacity-95 text-white rounded-xl text-sm font-semibold transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-6 py-2.5 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white rounded-xl text-sm font-semibold transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled>
                 <i class="fas fa-upload"></i>
                 Importar
@@ -1443,4 +1553,7 @@ function escanearParaCodigo() {
 
 </script>
 
-{% endblock %}
+
+// ============================================================
+// DESCARGAS EN MODO ESCRITORIO (pywebview) Y WEB
+// ============================================================{% endblock %}

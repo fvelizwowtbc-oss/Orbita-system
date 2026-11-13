@@ -197,3 +197,19 @@ def eliminar_suscripcion(sid):
     db.session.commit()
     flash('Suscripción eliminada del historial.', 'success')
     return redirect(url_for('admin.suscripciones'))
+
+
+@admin_bp.route('/usuarios/<int:uid>/activar', methods=['POST'])
+def activar_usuario(uid):
+    usuario = db.session.get(Usuario, uid)
+    if not usuario:
+        flash('Usuario no encontrado', 'danger')
+        return redirect(url_for('admin.usuarios'))
+        
+    usuario.activo = True
+    usuario.codigo_verificacion = None
+    usuario.codigo_expira = None
+    db.session.commit()
+    
+    flash(f'Usuario {usuario.nombre} activado manualmente con éxito.', 'success')
+    return redirect(url_for('admin.usuarios'))

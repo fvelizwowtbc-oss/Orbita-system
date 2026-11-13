@@ -1,14 +1,14 @@
-<a href="{{ url_for('admin.dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" title="Dashboard">
-    <i class="fas fa-chart-line"></i>
+<a href="{{ url_for('admin.dashboard') }}" class="drawer-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" title="Dashboard">
+    <i class="fas fa-chart-pie"></i>
     <span>Dashboard</span>
 </a>
 
-<a href="{{ url_for('admin.usuarios') }}" class="sidebar-link {% if request.endpoint == 'admin.usuarios' %}active{% endif %}" title="Usuarios">
+<a href="{{ url_for('admin.usuarios') }}" class="drawer-link {% if request.endpoint == 'admin.usuarios' %}active{% endif %}" title="Usuarios">
     <i class="fas fa-users"></i>
     <span>Usuarios</span>
 </a>
 
-<a href="{{ url_for('admin.suscripciones') }}" class="sidebar-link {% if request.endpoint == 'admin.suscripciones' %}active{% endif %}" title="Suscripciones">
+<a href="{{ url_for('admin.suscripciones') }}" class="drawer-link {% if request.endpoint == 'admin.suscripciones' %}active{% endif %}" title="Suscripciones">
     <i class="fas fa-crown"></i>
     <span>Suscripciones</span>
 </a>

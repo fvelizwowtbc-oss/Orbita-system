@@ -5,7 +5,7 @@
 {% block sidebar %}{% include 'user/_sidebar.html' %}{% endblock %}
 
 {% block header_actions %}
-<button onclick="document.getElementById('modalCrearScanner').classList.remove('hidden')" class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+<button onclick="document.getElementById('modalCrearScanner').classList.remove('hidden')" class="bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
     <i class="fas fa-plus mr-1"></i> Nuevo Scanner
 </button>
 {% endblock %}
@@ -54,7 +54,7 @@
 <!-- Modal Crear Scanner -->
 <div id="modalCrearScanner" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-        <div class="px-6 py-4 border-b border-slate-200 bg-[#0f172a] rounded-t-2xl">
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 rounded-t-2xl">
             <h3 class="text-white font-bold text-lg"><i class="fas fa-tablet-alt mr-2"></i> Nuevo Dispositivo</h3>
         </div>
         <form method="POST" action="{{ url_for('vip.scanners_crear') }}" class="p-6 space-y-4">
@@ -74,7 +74,7 @@
             </div>
             <div class="flex gap-2 pt-4">
                 <button type="button" onclick="document.getElementById('modalCrearScanner').classList.add('hidden')" class="flex-1 py-2 border rounded-lg text-slate-600 hover:bg-slate-50">Cancelar</button>
-                <button type="submit" class="flex-1 py-2 bg-[#0f172a] text-white rounded-lg font-bold">Crear Scanner</button>
+                <button type="submit" class="flex-1 py-2 bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] hover:opacity-90 shadow-md shadow-pink-500/20 text-white rounded-lg font-bold">Crear Scanner</button>
             </div>
         </form>
     </div>

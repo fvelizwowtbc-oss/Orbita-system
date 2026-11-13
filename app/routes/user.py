@@ -1090,7 +1090,7 @@ def importar_excel():
 
 
 def _categorias_predefinidas():
-    return ['Repuestos Moto', 'Electrónica', 'Hogar', 'Ropa', 'Herramientas',
+    return ['Carniceria', 'Repuestos Moto', 'Electrónica', 'Hogar', 'Ropa', 'Herramientas',
             'Automotriz', 'Oficina', 'Alimentos', 'Bebidas', 'Juguetes',
             'Deportes', 'Salud y Belleza', 'Libros', 'Construcción',
             'Farmacia', 'Otros']

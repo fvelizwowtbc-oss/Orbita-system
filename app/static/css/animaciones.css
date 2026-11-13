@@ -166,3 +166,28 @@ html:not(.anim-ready) .anim-stagger > * {
     opacity: 1;
     transform: none;
 }
+
+/* Animaciones para transición de Login/Registro */
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.anim-slide-in-left {
+    animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.anim-slide-in-right {
+    animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animación de aparición suave para Login/Register */
+@keyframes authFadeIn {
+    0% { opacity: 0; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1); }
+}
+.anim-auth-fade {
+    animation: authFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
