@@ -177,14 +177,18 @@ def ventas():
     clientes = Cliente.query.filter_by(usuario_id=padre_id).order_by(Cliente.nombre).all()
     tasas = TasasService.obtener_tasas(padre_id)
 
+    from ..models.caja import CajaTurno
+    # ✅ Buscar la caja abierta DEL VENDEDOR
+    caja_abierta = CajaTurno.query.filter_by(vendedor_id=current_user.id, estado='abierta').first()
+
     return render_template(
         'vendedor/ventas.html',
         productos=productos,
         ventas_recientes=ventas_recientes,
         stats=stats,
-
         clientes=clientes,
         tasas=tasas,
+        caja_abierta=caja_abierta,
     )
 
 
@@ -1227,3 +1231,103 @@ def gastos_eliminar(gasto_id):
     db.session.commit()
 
     return jsonify({'success': True})
+
+
+# ============================================================
+# CAJA (VENDEDOR)
+# ============================================================
+from ..models.caja import CajaTurno
+from ..services.tasas import TasasService
+
+@vendedor_bp.route('/caja', methods=['GET', 'POST'])
+@login_required
+def caja():
+    vid = current_user.id
+    padre_id = current_user.usuario_padre_id
+    
+    # Buscar si el vendedor tiene una caja abierta
+    caja_abierta = CajaTurno.query.filter_by(vendedor_id=vid, estado='abierta').first()
+    
+    if request.method == 'POST' and not caja_abierta:
+        try:
+            usd = float(request.form.get('saldo_inicial_usd', 0) or 0)
+            bs = float(request.form.get('saldo_inicial_bs', 0) or 0)
+            
+            nueva_caja = CajaTurno(
+                usuario_id=padre_id,
+                vendedor_id=vid,
+                saldo_inicial_usd=usd,
+                saldo_inicial_bs=bs,
+                estado='abierta'
+            )
+            db.session.add(nueva_caja)
+            db.session.commit()
+            flash('Caja abierta correctamente.', 'success')
+            return redirect(url_for('vendedor.caja'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al abrir caja: {e}', 'danger')
+
+    # Historial de cajas cerradas del vendedor
+    cierres = CajaTurno.query.filter_by(vendedor_id=vid, estado='cerrada').order_by(CajaTurno.cerrada_en.desc()).limit(10).all()
+    
+    # Tasa para mostrar en la vista
+    tasas = TasasService.obtener_tasas(padre_id)
+    
+    return render_template('vendedor/caja.html', caja_abierta=caja_abierta, cierres_anteriores=cierres, tasas=tasas)
+
+
+@vendedor_bp.route('/caja/cerrar', methods=['POST'])
+@login_required
+def cerrar_caja():
+    vid = current_user.id
+    caja = CajaTurno.query.filter_by(vendedor_id=vid, estado='abierta').first()
+    
+    if caja:
+        caja.estado = 'cerrada'
+        caja.cerrada_en = datetime.utcnow()
+        
+        # Obtener tasa de forma segura
+        from ..services.tasas import TasasService
+        try:
+            tasa_bcv = float(TasasService.obtener_tasa_bcv() or 1.0)
+        except (TypeError, ValueError):
+            tasa_bcv = 1.0
+        if tasa_bcv <= 0:
+            tasa_bcv = 1.0
+        
+        # Leer montos reales del formulario
+        raw_usd = request.form.get('saldo_real_usd')
+        raw_bs = request.form.get('saldo_real_bs')
+        
+        real_usd = float(raw_usd) if raw_usd and raw_usd.strip() else 0.0
+        real_bs = float(raw_bs) if raw_bs and raw_bs.strip() else 0.0
+        
+        caja.saldo_real_usd = real_usd
+        caja.saldo_real_bs = real_bs
+        
+        # Calcular esperado
+        base_usd = float(caja.saldo_inicial_usd or 0)
+        base_bs = float(caja.saldo_inicial_bs or 0)
+        ventas_usd = float(caja.total_ventas_efectivo_usd or 0)
+        ventas_bs = float(caja.total_ventas_efectivo_bs or 0)
+        
+        esperado_usd = base_usd + ventas_usd
+        esperado_bs = base_bs + ventas_bs
+        
+        # Diferencia
+        caja.diferencia_usd = real_usd - esperado_usd
+        caja.diferencia_bs = real_bs - esperado_bs
+        
+        # ✅ Guardar el total de ventas en ese turno para el historial
+        caja.ventas_totales_usd = ventas_usd
+        caja.ventas_totales_bs = ventas_bs
+        
+        caja.tasa_cierre = tasa_bcv
+        
+        db.session.commit()
+        flash('Caja cerrada correctamente. Turno finalizado.', 'success')
+    else:
+        flash('No hay ninguna caja abierta para cerrar.', 'warning')
+        
+    return redirect(url_for('vendedor.caja'))

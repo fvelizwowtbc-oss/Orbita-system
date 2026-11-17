@@ -53,7 +53,7 @@ class VentasService:
         try:
             for item in items:
                 pid = item['producto_id']
-                cant = int(item['cantidad'])
+                cant = float(item['cantidad'])
                 pu = float(item['precio_usd'])
                 tasa_usada = item.get('tasa_usada', tasas['activa'])
 
@@ -70,8 +70,25 @@ class VentasService:
                 total_item = cant * pu
                 total_usd += total_item
 
-                # Descontar stock
-                producto.stock_actual -= cant
+                # Descontar stock del producto
+                from decimal import Decimal
+                es_peso = producto.categoria in ('Carniceria', 'Charcuteria')
+                
+                if es_peso:
+                    producto.stock_actual = Decimal(str(producto.stock_actual or 0)) - Decimal(str(cant))
+                else:
+                    producto.stock_actual = int(producto.stock_actual or 0) - int(cant)
+
+                # ✅ Descontar stock de la variante si aplica
+                variante_id_venta = item.get('variante_id')
+                if variante_id_venta:
+                    from ..models.producto import ProductoVariante
+                    variante = ProductoVariante.query.filter_by(id=variante_id_venta, producto_id=pid).first()
+                    if variante:
+                        if es_peso:
+                            variante.stock_actual = Decimal(str(variante.stock_actual or 0)) - Decimal(str(cant))
+                        else:
+                            variante.stock_actual = int(variante.stock_actual or 0) - int(cant)
 
                 venta = Venta(
                     usuario_id=usuario_id,
@@ -155,15 +172,28 @@ class VentasService:
                     notas='Pago inicial',
                 )
                 db.session.add(abono)
-
-            # ✅ SUMAR A LA CAJA SI EL PAGO ES EN EFECTIVO
-            from decimal import Decimal
+            # ✅ SUMAR A LA CAJA SOLO A LA MONEDA CORRESPONDIENTE
             metodo = data.get('metodo_pago', 'efectivo')
-            if metodo == 'efectivo':
-                caja_abierta = CajaTurno.query.filter_by(usuario_id=usuario_id, estado='abierta').first()
+            if metodo in ('efectivo', 'divisa'):
+                from decimal import Decimal
+                
+                # Identificar si la venta la hizo un vendedor
+                vendedor_actual_id = data.get('vendedor_id') or vendedor_id
+                
+                if vendedor_actual_id:
+                    caja_abierta = CajaTurno.query.filter_by(vendedor_id=vendedor_actual_id, estado='abierta').first()
+                else:
+                    caja_abierta = CajaTurno.query.filter_by(usuario_id=usuario_id, vendedor_id=None, estado='abierta').first()
+
                 if caja_abierta:
-                    caja_abierta.total_ventas_efectivo_usd = Decimal(str(caja_abierta.total_ventas_efectivo_usd or 0)) + Decimal(str(total_usd))
-                    caja_abierta.total_ventas_efectivo_bs = Decimal(str(caja_abierta.total_ventas_efectivo_bs or 0)) + Decimal(str(total_ves))
+                    # Si paga en Bs (efectivo), sumar SOLO a la caja en Bs
+                    if metodo == 'efectivo':
+                        caja_abierta.total_ventas_efectivo_bs = Decimal(str(caja_abierta.total_ventas_efectivo_bs or 0)) + Decimal(str(total_ves))
+                    # Si paga en Divisas ($), sumar SOLO a la caja en Dólares
+                    elif metodo == 'divisa':
+                        caja_abierta.total_ventas_efectivo_usd = Decimal(str(caja_abierta.total_ventas_efectivo_usd or 0)) + Decimal(str(total_usd))
+            
+            db.session.commit()
 
             db.session.commit()
 

@@ -49,7 +49,7 @@ class Venta(db.Model):
     )
 
     # ============ DATOS DE LA VENTA ============
-    cantidad = db.Column(db.Integer, nullable=False)
+    cantidad = db.Column(db.Numeric(10, 2), nullable=False) # ✅ Soporta decimales
     precio_usd = db.Column(db.Numeric(10, 2), nullable=False)
 
     # Las 3 tasas al momento de la venta

@@ -23,8 +23,8 @@ class Producto(db.Model):
     descripcion = db.Column(db.Text)
     fecha_expiracion = db.Column(db.Date)
     ubicacion = db.Column(db.String(200))
-    stock_actual = db.Column(db.Integer, default=0)
-    stock_minimo = db.Column(db.Integer, default=5)
+    stock_actual = db.Column(db.Numeric(10, 2), default=0) # ✅ Permite decimales (ej: 9.500 kg)
+    stock_minimo = db.Column(db.Numeric(10, 2), default=5)
     precio_costo_usd = db.Column(db.Numeric(10, 2), default=0)
     precio_venta_usd = db.Column(db.Numeric(10, 2), nullable=False)
     margen_ganancia = db.Column(db.Numeric(10, 2), default=0)
@@ -48,17 +48,17 @@ class Producto(db.Model):
 
     @property
     def valor_inventario_usd(self):
-        # Si tiene variantes, calculamos el valor sumando (precio_variante * stock_variante)
+        # ✅ Convertir todo a float para evitar mezclar float y Decimal
         variantes = self.variantes.all()
         if variantes:
-            total = 0
+            total = 0.0
             for v in variantes:
-                # Si la variante no tiene precio propio, hereda el del padre (o usa 0)
                 precio = float(v.precio_venta_usd) if v.precio_venta_usd else float(self.precio_venta_usd or 0)
-                total += precio * v.stock_actual
+                stock = float(v.stock_actual or 0)
+                total += precio * stock
             return total
         # Si no tiene variantes, usa el cálculo normal
-        return float(self.precio_venta_usd or 0) * self.stock_actual
+        return float(self.precio_venta_usd or 0) * float(self.stock_actual or 0)
 
     @property
     def imagen_url(self):
@@ -120,7 +120,7 @@ class ProductoVariante(db.Model):
                             nullable=False, index=True)
     nombre = db.Column(db.String(200), nullable=False)
     codigo = db.Column(db.String(100))
-    stock_actual = db.Column(db.Integer, default=0)
+    stock_actual = db.Column(db.Numeric(10, 2), default=0) # ✅ Permite decimales (ej: 9.500 kg)
     stock_minimo = db.Column(db.Integer, default=0)
     precio_costo_usd = db.Column(db.Numeric(10, 2), default=0)
     precio_venta_usd = db.Column(db.Numeric(10, 2), default=0)

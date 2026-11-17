@@ -49,6 +49,7 @@ def subcategorias():
     cat = request.args.get('categoria', '')
     mapa = {
         'Carniceria': ['Res', 'Cerdo', 'Pollo', 'Pescado', 'Chorizo', 'Queso', 'Otros'],
+        'Charcuteria': ['Jamon', 'Queso', 'Salchichon', 'Mortadela', 'Chorizo', 'Otros'],
         'Repuestos Moto': ['Motor', 'Transmisión', 'Frenos', 'Suspensión',
                            'Electricidad', 'Chasis', 'Accesorios',
                            'Llantas y Neumáticos', 'Carrocería', 'Escape',

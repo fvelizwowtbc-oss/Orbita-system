@@ -1090,7 +1090,7 @@ def importar_excel():
 
 
 def _categorias_predefinidas():
-    return ['Carniceria', 'Repuestos Moto', 'Electrónica', 'Hogar', 'Ropa', 'Herramientas',
+    return ['Carniceria', 'Charcuteria', 'Repuestos Moto', 'Electrónica', 'Hogar', 'Ropa', 'Herramientas',
             'Automotriz', 'Oficina', 'Alimentos', 'Bebidas', 'Juguetes',
             'Deportes', 'Salud y Belleza', 'Libros', 'Construcción',
             'Farmacia', 'Otros']
@@ -2031,9 +2031,17 @@ def caja():
 
     cierres = CajaTurno.query.filter_by(usuario_id=uid, estado='cerrada').order_by(CajaTurno.cerrada_en.desc()).limit(10).all()
     
+    # ✅ Cierres de vendedores
+    from sqlalchemy.orm import aliased
+    vendedor_alias = aliased(__import__('app.models.usuario', fromlist=['Usuario']).Usuario)
+    cierres_vendedores = db.session.query(CajaTurno, vendedor_alias.nombre).\
+        join(vendedor_alias, CajaTurno.vendedor_id == vendedor_alias.id).\
+        filter(CajaTurno.usuario_id == uid, CajaTurno.estado == 'cerrada').\
+        order_by(CajaTurno.cerrada_en.desc()).limit(20).all()
+    
     from ..services.tasas import TasasService
     tasa_actual = TasasService.obtener_tasa_bcv()
-    return render_template('user/caja.html', caja_abierta=caja_abierta, cierres_anteriores=cierres, tasa_bcv=tasa_actual)
+    return render_template('user/caja.html', caja_abierta=caja_abierta, cierres_anteriores=cierres, tasa_bcv=tasa_actual, cierres_vendedores=cierres_vendedores)
 
 @user_bp.route('/caja/cerrar', methods=['POST'])
 @login_required

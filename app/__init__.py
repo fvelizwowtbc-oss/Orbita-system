@@ -108,6 +108,36 @@ def create_app(config_name='default'):
         return response
 
     app.mail = mail
+
+    # ============================================================
+    # ✅ BLOQUEO DE RUTAS PARA USUARIOS TIPO SCANNER
+    # ============================================================
+    from flask import request, redirect, url_for
+    from flask_login import current_user
+    from flask import flash
+
+    @app.before_request
+    def bloquear_scanner():
+        if not current_user.is_authenticated:
+            return None
+            
+        if not getattr(current_user, 'es_scanner', False):
+            return None
+            
+        # Lista de rutas permitidas para scanner
+        allowed_endpoints = [
+            'scanner.pantalla',
+            'scanner.buscar',
+            'auth.logout',
+            'static',
+        ]
+        
+        if request.endpoint not in allowed_endpoints:
+            flash('No tienes acceso a esta sección.', 'warning')
+            return redirect(url_for('scanner.pantalla'))
+            
+        return None
+
     return app
 
 def _setup_logging(app):

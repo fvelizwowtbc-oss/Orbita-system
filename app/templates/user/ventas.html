@@ -57,13 +57,24 @@
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="font-bold {% if tiene_variantes %}text-[#787FF6]{% else %}text-[#0f172a]{% endif %}">
-                            ${{ "%.2f"|format(p.precio_venta_usd) }}
+                            {% if tiene_variantes %}
+                                {% set precios_variantes = p.variantes.all() | map(attribute='precio_venta_efectivo') | list %}
+                                {% if precios_variantes %}
+                                    {% set precio_min = precios_variantes | min %}
+                                    ${{ "%.2f"|format(precio_min) }}
+                                    <span class="text-[10px] font-normal opacity-70">(desde)</span>
+                                {% else %}
+                                    ${{ "%.2f"|format(p.precio_venta_usd) }}
+                                {% endif %}
+                            {% else %}
+                                ${{ "%.2f"|format(p.precio_venta_usd) }}
+                            {% endif %}
                         </span>
                         <span class="text-xs text-slate-500">Stock: {{ p.stock_actual }}</span>
                     </div>
                     {% if tiene_variantes %}
                     <div class="mt-1 text-[10px] text-[#787FF6] font-medium">
-                        <i class="fas fa-mouse-pointer mr-1"></i>Click para elegir variante
+                        <i class="fas fa-list-ul mr-1"></i>Ver variantes
                     </div>
                     {% endif %}
                 </div>
@@ -575,18 +586,19 @@ function agregarAlCarritoDesdeModal() {
     }
 
     var precioProporcional = (gramos / 1000) * precioKg;
+    var cantidadEnKilos = gramos / 1000; // ✅ 500g = 0.5 kg
     var nombreFinal = nombre + ' (' + gramos + 'g)';
-    var existente = carrito.find(function (i) { return i.producto_id === id && i.es_carniceria && i.gramos === gramos; });
+    var existente = carrito.find(function (i) { return i.producto_id === id && i.es_carniceria; });
 
     if (existente) {
-        existente.cantidad++;
+        existente.cantidad += cantidadEnKilos;
     } else {
         carrito.push({ 
             producto_id: id, 
             variante_id: null, 
             nombre: nombreFinal, 
-            precio_usd: precioProporcional, 
-            cantidad: 1, 
+            precio_usd: precioKg, // ✅ Precio por kilo
+            cantidad: cantidadEnKilos, 
             stock: 9999,
             es_carniceria: true,
             gramos: gramos
@@ -610,7 +622,8 @@ function agregarDesdeElemento(el) {
 
     if (isNaN(id) || isNaN(precio)) { toastError('Datos del producto invalidos'); return; }
 
-    if (categoria === 'carniceria') {
+    // ✅ Detectar tanto Carniceria como Charcuteria
+    if (categoria === 'carniceria' || categoria === 'charcuteria') {
         abrirModalCarniceria(id, nombre, precio);
     } else if (tieneVariantes) {
         abrirModalVariante(id, nombre);
